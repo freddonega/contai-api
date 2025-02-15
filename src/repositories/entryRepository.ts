@@ -49,7 +49,11 @@ export const listEntries = async ({
     }),
   };
 
-  const orderBy = sort_by ? { [sort_by]: sort_order } : {};
+  const orderBy = sort_by
+    ? sort_by.startsWith("category.")
+      ? { category: { [sort_by.split(".")[1]]: sort_order } }
+      : { [sort_by]: sort_order }
+    : {};
 
   const [entries, total] = await prisma.$transaction([
     prisma.entry.findMany({
