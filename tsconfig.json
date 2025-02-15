@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
+    "outDir": "./public",
     "rootDir": "."
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "src/express.d.ts"],
