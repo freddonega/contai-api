@@ -1,10 +1,10 @@
 {
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "ts-node src/server.ts",
+    "migrate": "prisma migrate deploy",
     "dev": "nodemon",
-    "test": "env-cmd -f .env.test jest",
-    "vercel-build": "npx prisma generate && npx prisma migrate deploy"
+    "test": "env-cmd -f .env.test jest"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
