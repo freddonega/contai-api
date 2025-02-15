@@ -1,0 +1,45 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
+  password   String
+  name       String // New field
+  entries    Entry[]
+  categories Category[]
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String
+  user_id    Int
+  type       String
+  user       User     @relation(fields: [user_id], references: [id])
+  entries    Entry[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([name, type])
+}
+
+model Entry {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  description String?
+  category_id Int
+  user_id     Int
+  period      String
+  user        User     @relation(fields: [user_id], references: [id])
+  category    Category @relation(fields: [category_id], references: [id])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
