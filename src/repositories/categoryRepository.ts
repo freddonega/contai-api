@@ -7,11 +7,15 @@ export const createCategory = async (
   data: Omit<Category, "id" | "created_at" | "updated_at">
 ): Promise<Omit<Category, "user_id">> => {
   const existingCategory = await prisma.category.findFirst({
-    where: { name: data.name },
+    where: {
+      name: data.name,
+      type: data.type,
+      user_id: data.user_id,
+    },
   });
 
   if (existingCategory) {
-    throw new CategoryException("Categoria com o mesmo nome já existe");
+    throw new CategoryException("Categoria com o mesmo nome e tipo já existe");
   }
 
   return prisma.category.create({

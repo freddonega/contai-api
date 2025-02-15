@@ -28,7 +28,7 @@ model Category {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  @@unique([name, type])
+  @@unique([name, type, user_id])
 }
 
 model Entry {
