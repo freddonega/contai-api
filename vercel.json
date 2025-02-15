@@ -1,8 +1,5 @@
 {
     "version": 2,
-    "scripts": {
-        "postinstall": "prisma generate"
-    },
     "builds": [
         {
             "src": "src/server.ts",
