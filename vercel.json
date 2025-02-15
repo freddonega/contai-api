@@ -3,21 +3,13 @@
     "builds": [
         {
             "src": "src/server.ts",
-            "use": "@vercel/node",
-            "config": {
-                "maxDuration": 10
-            }
+            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
-            "src": "/(.*)",
-            "dest": "/src/server.ts"
+            "src": "(.*)",
+            "dest": "src/server.ts"
         }
-    ],
-    "build": {
-        "env": {
-            "PRISMA_GENERATE": "true"
-        }
-    }
+    ]
 }

@@ -1,8 +1,7 @@
 {
   "scripts": {
-    "build": "prisma generate && tsc",
     "start": "ts-node src/server.ts",
-    "migrate": "prisma migrate deploy",
+    "vercel-build": "npx prisma generate deploy",
     "dev": "nodemon",
     "test": "env-cmd -f .env.test jest"
   },
