@@ -37,7 +37,7 @@ export const createEntryController = async (req: Request, res: Response) => {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      res.status(401).json({ error: "User ID not found in token" });
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
 
@@ -51,7 +51,7 @@ export const createEntryController = async (req: Request, res: Response) => {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Erro Interno do Servidor" });
     }
   }
 };
@@ -62,7 +62,7 @@ export const listEntriesController = async (req: Request, res: Response) => {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      res.status(401).json({ error: "User ID not found in token" });
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
 
@@ -75,7 +75,7 @@ export const listEntriesController = async (req: Request, res: Response) => {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Erro Interno do Servidor" });
     }
   }
 };
@@ -87,12 +87,12 @@ export const getEntryController = async (req: Request, res: Response) => {
     const entry = await getEntry(parseInt(id));
 
     if (!entry || entry.user_id !== user_id) {
-      res.status(404).json({ error: "Entry not found" });
+      res.status(404).json({ error: "Entrada não encontrada" });
       return;
     }
     res.json(entry);
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Erro Interno do Servidor" });
   }
 };
 
@@ -104,7 +104,7 @@ export const updateEntryController = async (req: Request, res: Response) => {
     const entry = await getEntry(parseInt(id));
 
     if (!entry || entry.user_id !== user_id) {
-      res.status(404).json({ error: "Entry not found" });
+      res.status(404).json({ error: "Entrada não encontrada" });
       return;
     }
 
@@ -114,7 +114,7 @@ export const updateEntryController = async (req: Request, res: Response) => {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Erro Interno do Servidor" });
     }
   }
 };
@@ -126,13 +126,13 @@ export const deleteEntryController = async (req: Request, res: Response) => {
     const entry = await getEntry(parseInt(id));
 
     if (!entry || entry.user_id !== user_id) {
-      res.status(404).json({ error: "Entry not found" });
+      res.status(404).json({ error: "Entrada não encontrada" });
       return;
     }
 
     await deleteEntry(parseInt(id));
-    res.json({ message: "Entry deleted" });
+    res.json({ message: "Entrada deletada" });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Erro Interno do Servidor" });
   }
 };

@@ -19,7 +19,7 @@ const router = Router();
 
 /**
  * @swagger
- * /categories:
+ * /category:
  *   post:
  *     summary: Cria uma nova categoria
  *     tags: [Categories]
@@ -55,11 +55,11 @@ const router = Router();
  *       400:
  *         description: Erro de validação
  */
-router.post("/categories", authenticateToken, createCategoryController);
+router.post("/category", authenticateToken, createCategoryController);
 
 /**
  * @swagger
- * /categories:
+ * /category:
  *   get:
  *     summary: Lista categorias com busca, paginação e itens por página
  *     tags: [Categories]
@@ -111,11 +111,11 @@ router.post("/categories", authenticateToken, createCategoryController);
  *       500:
  *         description: Erro Interno do Servidor
  */
-router.get("/categories", authenticateToken, listCategoriesController);
+router.get("/category", authenticateToken, listCategoriesController);
 
 /**
  * @swagger
- * /categories/{id}:
+ * /category/{id}:
  *   get:
  *     summary: Obtém uma categoria pelo ID
  *     tags: [Categories]
@@ -145,11 +145,11 @@ router.get("/categories", authenticateToken, listCategoriesController);
  *       500:
  *         description: Erro Interno do Servidor
  */
-router.get("/categories/:id", authenticateToken, getCategoryController);
+router.get("/category/:id", authenticateToken, getCategoryController);
 
 /**
  * @swagger
- * /categories/{id}:
+ * /category/{id}:
  *   put:
  *     summary: Atualiza uma categoria pelo ID
  *     tags: [Categories]
@@ -196,11 +196,11 @@ router.get("/categories/:id", authenticateToken, getCategoryController);
  *       500:
  *         description: Erro Interno do Servidor
  */
-router.put("/categories/:id", authenticateToken, updateCategoryController);
+router.put("/category/:id", authenticateToken, updateCategoryController);
 
 /**
  * @swagger
- * /categories/{id}:
+ * /category/{id}:
  *   delete:
  *     summary: Exclui uma categoria pelo ID
  *     tags: [Categories]
@@ -219,6 +219,6 @@ router.put("/categories/:id", authenticateToken, updateCategoryController);
  *       500:
  *         description: Erro Interno do Servidor
  */
-router.delete("/categories/:id", authenticateToken, deleteCategoryController);
+router.delete("/category/:id", authenticateToken, deleteCategoryController);
 
 export default router;

@@ -73,7 +73,7 @@ export const getCategoryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const category = await getCategory(parseInt(id));
+    const category = await getCategory(Number(id));
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
@@ -90,14 +90,14 @@ export const updateCategoryController = async (req: Request, res: Response) => {
     const { id } = req.params;
     const user_id = req.user?.id;
     const categoryData = categorySchema.parse(req.body);
-    const category = await getCategory(parseInt(id));
+    const category = await getCategory(Number(id));
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
       return;
     }
 
-    const updatedCategory = await updateCategory(parseInt(id), categoryData);
+    const updatedCategory = await updateCategory(Number(id), categoryData);
     res.json(updatedCategory);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -112,14 +112,14 @@ export const deleteCategoryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const category = await getCategory(parseInt(id));
+    const category = await getCategory(Number(id));
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
       return;
     }
 
-    await deleteCategory(parseInt(id));
+    await deleteCategory(Number(id));
     res.json({ message: "Categoria deletada" });
   } catch (error) {
     if (error instanceof CategoryException) {

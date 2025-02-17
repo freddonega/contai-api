@@ -3,17 +3,20 @@
     "start": "ts-node src/server.ts",
     "vercel-build": "npx prisma generate deploy",
     "dev": "nodemon",
-    "test": "env-cmd -f .env.test jest"
+    "test": "env-cmd -f .env.test jest",
+    "postinstall": "prisma migrate deploy"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",
+    "@types/node-cron": "^3.0.11",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "prisma": "^6.3.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

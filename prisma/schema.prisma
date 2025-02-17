@@ -8,25 +8,27 @@ generator client {
 }
 
 model User {
-  id         Int        @id @default(autoincrement())
-  email      String     @unique
-  password   String
-  name       String // New field
-  entries    Entry[]
-  categories Category[]
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  password         String
+  name             String // New field
+  entries          Entry[]
+  categories       Category[]
+  recurringEntries RecurringEntry[]
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
 }
 
 model Category {
-  id         Int      @id @default(autoincrement())
-  name       String
-  user_id    Int
-  type       String
-  user       User     @relation(fields: [user_id], references: [id])
-  entries    Entry[]
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id               Int              @id @default(autoincrement())
+  name             String
+  user_id          Int
+  type             String
+  user             User             @relation(fields: [user_id], references: [id])
+  entries          Entry[]
+  recurringEntries RecurringEntry[]
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
 
   @@unique([name, type, user_id])
 }
@@ -42,4 +44,19 @@ model Entry {
   category    Category @relation(fields: [category_id], references: [id])
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+}
+
+model RecurringEntry {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  category_id Int
+  amount      Float
+  description String?
+  frequency   String // "monthly", "weekly", "yearly"
+  next_run    DateTime
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user     User     @relation(fields: [user_id], references: [id])
+  category Category @relation(fields: [category_id], references: [id])
 }
