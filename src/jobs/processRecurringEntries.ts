@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const processRecurringEntries = async () => {
+  console.log("Processando recorrências");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const recurringEntries = await prisma.recurringEntry.findMany({
@@ -23,7 +24,6 @@ export const processRecurringEntries = async () => {
     });
 
     let nextRun = new Date(entry.next_run);
-    console.log("nextRun", nextRun);
     switch (entry.frequency) {
       case "daily":
         nextRun.setDate(nextRun.getDate() + 1);
@@ -40,8 +40,6 @@ export const processRecurringEntries = async () => {
         nextRun.setFullYear(nextRun.getFullYear() + 1);
         break;
     }
-
-    console.log("new nextRun", nextRun);
 
     await prisma.recurringEntry.update({
       where: { id: entry.id },
