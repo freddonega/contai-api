@@ -17,12 +17,5 @@
             "path": "/jobs/process_recurring_entries",
             "schedule": "0 0 * * *"
         }
-    ],
-    "redirects": [
-        {
-            "source": "https://contai-h9ifpcbjk-fred-donegas-projects.vercel.app/jobs/(.*)",
-            "destination": "https://contai-api.vercel.app/jobs/$1",
-            "permanent": true
-        }
     ]
 }
