@@ -6,7 +6,7 @@ const router = express.Router();
 /**
  * @swagger
  * /jobs/process_recurring_entries:
- *   post:
+ *   get:
  *     summary: Processa lançamentos recorrentes
  *     tags: [Jobs]
  *     responses:
@@ -15,7 +15,7 @@ const router = express.Router();
  *       500:
  *         description: Erro ao processar lançamentos recorrentes
  */
-router.post("/jobs/process_recurring_entries", async (req, res) => {
+router.get("/jobs/process_recurring_entries", async (req, res) => {
   try {
     await processRecurringEntries();
     res
