@@ -12,6 +12,13 @@
             "dest": "src/server.ts"
         }
     ],
+    "redirects": [
+        {
+            "source": "/:path*",
+            "destination": "https://contai-api.vercel.app/:path*",
+            "statusCode": 308
+        }
+    ],
     "crons": [
         {
             "path": "/jobs/process_recurring_entries",
