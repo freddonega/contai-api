@@ -169,7 +169,11 @@ export async function getTotalsByCategoryForMonth(
     },
   });
 
-  const categories = await prisma.category.findMany();
+  const categories = await prisma.category.findMany({
+    where: {
+      user_id,
+    },
+  });
 
   const totals = categories.map((category) => {
     const total = entries
