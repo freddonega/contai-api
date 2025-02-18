@@ -15,7 +15,7 @@
     "crons": [
         {
             "path": "/jobs/process_recurring_entries",
-            "schedule": "0 * * * *"
+            "schedule": "0 0 * * *"
         }
     ]
 }
