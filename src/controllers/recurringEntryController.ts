@@ -17,6 +17,17 @@ const recurringEntrySchema = z.object({
   next_run: z.string().transform((str) => new Date(str)),
 });
 
+const listRecurringEntriesSchema = z.object({
+  search: z.string().optional(),
+  page: z.preprocess((val) => Number(val || 1), z.number().min(1).default(1)),
+  items_per_page: z.preprocess(
+    (val) => Number(val || 10),
+    z.number().min(1).max(100).default(10)
+  ),
+  sort_by: z.string().optional(),
+  sort_order: z.enum(["asc", "desc"]).optional(),
+});
+
 export const createRecurringEntryController = async (
   req: Request,
   res: Response
@@ -48,16 +59,24 @@ export const listRecurringEntriesController = async (
   res: Response
 ) => {
   try {
+    const queryData = listRecurringEntriesSchema.parse(req.query);
     const user_id = req.user?.id;
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
-    const entries = await listRecurringEntries(user_id);
+    const entries = await listRecurringEntries({
+      ...queryData,
+      user_id,
+    });
 
     res.json(entries);
   } catch (error) {
-    res.status(500).json({ error: "Erro Interno do Servidor" });
+    if (error instanceof ZodError) {
+      res.status(400).json({ error: error.errors });
+    } else {
+      res.status(500).json({ error: "Erro Interno do Servidor" });
+    }
   }
 };
 

@@ -1,4 +1,4 @@
-import { PrismaClient, Category } from "@prisma/client";
+import { PrismaClient, Category, Prisma } from "@prisma/client";
 import { CategoryException } from "../exceptions/CategoryException";
 
 const prisma = new PrismaClient();
@@ -46,6 +46,7 @@ export const listCategories = async ({
     ...(search && {
       name: {
         contains: search,
+        mode: Prisma.QueryMode.insensitive,
       },
     }),
   };
