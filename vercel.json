@@ -3,12 +3,12 @@
     "builds": [
         {
             "src": "src/server.ts",
-            "use": "@vercel/node-server"
+            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
-            "src": "/(.*)",
+            "src": "(.*)",
             "dest": "src/server.ts"
         }
     ],
@@ -16,13 +16,6 @@
         {
             "path": "/jobs/process_recurring_entries",
             "schedule": "0 0 * * *"
-        }
-    ],
-    "redirects": [
-        {
-            "source": "https://contai-h9ifpcbjk-fred-donegas-projects.vercel.app/jobs/(.*)",
-            "destination": "https://contai-api.vercel.app/jobs/$1",
-            "permanent": true
         }
     ]
 }
