@@ -190,3 +190,210 @@ export async function getTotalsByCategoryForMonth(
 
   return totals;
 }
+
+export async function getMonthlyBalance(
+  year: number,
+  month: number,
+  user_id: number
+) {
+  const currentMonthEntries = await prisma.entry.findMany({
+    where: {
+      user_id: user_id,
+      period: `${year}-${String(month).padStart(2, "0")}`,
+    },
+    include: {
+      category: true,
+    },
+  });
+
+  const previousMonth = month === 1 ? 12 : month - 1;
+  const previousYear = month === 1 ? year - 1 : year;
+
+  const previousMonthEntries = await prisma.entry.findMany({
+    where: {
+      user_id: user_id,
+      period: `${previousYear}-${String(previousMonth).padStart(2, "0")}`,
+    },
+    include: {
+      category: true,
+    },
+  });
+
+  const calculateBalance = (
+    entries: (Entry & { category: { type: string } })[]
+  ) =>
+    entries.reduce(
+      (balance, entry) =>
+        entry.category.type === "income"
+          ? balance + entry.amount
+          : balance - entry.amount,
+      0
+    );
+
+  const currentMonthBalance = calculateBalance(currentMonthEntries);
+  const previousMonthBalance = calculateBalance(previousMonthEntries);
+
+  const percentageChange =
+    previousMonthBalance === 0
+      ? 0
+      : Number(
+          (
+            ((currentMonthBalance - previousMonthBalance) /
+              Math.abs(previousMonthBalance)) *
+            100
+          ).toFixed(2)
+        );
+
+  return {
+    currentMonthBalance,
+    previousMonthBalance,
+    percentageChange,
+  };
+}
+
+export async function getHighestCategoryForMonth(
+  year: number,
+  month: number,
+  user_id: number
+) {
+  const entries = await prisma.entry.findMany({
+    where: {
+      user_id: user_id,
+      period: `${year}-${String(month).padStart(2, "0")}`,
+    },
+    include: {
+      category: true,
+    },
+  });
+
+  const incomeEntries = entries.filter(
+    (entry) => entry.category.type === "income"
+  );
+  const expenseEntries = entries.filter(
+    (entry) => entry.category.type === "expense"
+  );
+
+  const highestIncome = incomeEntries.reduce(
+    (max, entry) =>
+      entry.amount > max.amount
+        ? { category: entry.category.name, amount: entry.amount }
+        : max,
+    { category: "", amount: 0 }
+  );
+
+  const highestExpense = expenseEntries.reduce(
+    (max, entry) =>
+      entry.amount > max.amount
+        ? { category: entry.category.name, amount: entry.amount }
+        : max,
+    { category: "", amount: 0 }
+  );
+
+  return { highestIncome, highestExpense };
+}
+
+export async function getCategoryComparison(
+  year: number,
+  month: number,
+  user_id: number
+) {
+  const currentMonthData = await getHighestCategoryForMonth(
+    year,
+    month,
+    user_id
+  );
+
+  const previousMonth = month === 1 ? 12 : month - 1;
+  const previousYear = month === 1 ? year - 1 : year;
+
+  const previousMonthData = await getHighestCategoryForMonth(
+    previousYear,
+    previousMonth,
+    user_id
+  );
+
+  const incomeChange =
+    previousMonthData.highestIncome.amount === 0
+      ? 0
+      : ((currentMonthData.highestIncome.amount -
+          previousMonthData.highestIncome.amount) /
+          previousMonthData.highestIncome.amount) *
+        100;
+
+  const expenseChange =
+    previousMonthData.highestExpense.amount === 0
+      ? 0
+      : ((currentMonthData.highestExpense.amount -
+          previousMonthData.highestExpense.amount) /
+          previousMonthData.highestExpense.amount) *
+        100;
+
+  return {
+    highestIncome: {
+      ...currentMonthData.highestIncome,
+      percentageChange: incomeChange,
+    },
+    highestExpense: {
+      ...currentMonthData.highestExpense,
+      percentageChange: expenseChange,
+    },
+  };
+}
+
+export async function getIncomeExpenseRatioForMonth(
+  year: number,
+  month: number,
+  user_id: number
+): Promise<number> {
+  const entries = await prisma.entry.findMany({
+    where: {
+      user_id: user_id,
+      period: `${year}-${String(month).padStart(2, "0")}`,
+    },
+    include: {
+      category: true,
+    },
+  });
+
+  const income = entries
+    .filter((entry) => entry.category.type === "income")
+    .reduce((sum, entry) => sum + entry.amount, 0);
+
+  const expense = entries
+    .filter((entry) => entry.category.type === "expense")
+    .reduce((sum, entry) => sum + entry.amount, 0);
+
+  return expense === 0 ? 0 : income / expense;
+}
+
+export async function getSurvivalTime(user_id: number): Promise<number> {
+  const currentBalance = await prisma.entry.aggregate({
+    _sum: {
+      amount: true,
+    },
+    where: {
+      user_id: user_id,
+      category: {
+        type: "income",
+      },
+    },
+  });
+
+  const totalExpenses = await prisma.entry.aggregate({
+    _sum: {
+      amount: true,
+    },
+    where: {
+      user_id: user_id,
+      category: {
+        type: "expense",
+      },
+    },
+  });
+
+  const averageMonthlyExpenses = (totalExpenses._sum.amount ?? 0) / 12;
+
+  return averageMonthlyExpenses === 0
+    ? Infinity
+    : (currentBalance._sum.amount ?? 0) / averageMonthlyExpenses;
+}

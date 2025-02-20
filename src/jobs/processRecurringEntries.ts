@@ -19,7 +19,7 @@ export const processRecurringEntries = async () => {
         category_id: entry.category_id,
         amount: entry.amount,
         description: entry.description,
-        period: today.toISOString().slice(0, 7), // Formato YYYY-MM
+        period: entry.next_run.toISOString().slice(0, 7), // Formato YYYY-MM
       },
     });
 
