@@ -27,8 +27,8 @@ const listEntriesSchema = z.object({
     (val) => Number(val || 10),
     z.number().min(1).max(100).default(10)
   ),
-  sort_by: z.string().optional(),
-  sort_order: z.enum(["asc", "desc"]).optional(),
+  sort_by: z.array(z.string()).optional(),
+  sort_order: z.array(z.enum(["asc", "desc"])).optional(),
 });
 
 export const createEntryController = async (req: Request, res: Response) => {
@@ -58,7 +58,13 @@ export const createEntryController = async (req: Request, res: Response) => {
 
 export const listEntriesController = async (req: Request, res: Response) => {
   try {
-    const queryData = listEntriesSchema.parse(req.query);
+    let queryData = listEntriesSchema.parse(req.query);
+    if (queryData.sort_by && !Array.isArray(queryData.sort_by)) {
+      queryData = { ...queryData, sort_by: [queryData.sort_by] };
+    }
+    if (queryData.sort_order && !Array.isArray(queryData.sort_order)) {
+      queryData = { ...queryData, sort_order: [queryData.sort_order] };
+    }
     const user_id = req.user?.id;
 
     if (!user_id) {
@@ -68,6 +74,10 @@ export const listEntriesController = async (req: Request, res: Response) => {
 
     const entries = await listEntries({
       ...queryData,
+      sort_by: queryData.sort_by?.filter((item): item is string => !!item),
+      sort_order: queryData.sort_order?.filter(
+        (item): item is "asc" | "desc" => !!item
+      ),
       user_id,
     });
     res.json(entries);

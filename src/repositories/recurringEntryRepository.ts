@@ -22,8 +22,8 @@ export const listRecurringEntries = async ({
   search?: string;
   page?: number;
   items_per_page: number;
-  sort_by?: string;
-  sort_order?: "asc" | "desc";
+  sort_by?: string[];
+  sort_order?: Array<"asc" | "desc">;
 }) => {
   const where = {
     user_id,
@@ -34,11 +34,18 @@ export const listRecurringEntries = async ({
     }),
   };
 
-  const orderBy = sort_by
-    ? sort_by.startsWith("category.")
-      ? { category: { [sort_by.split(".")[1]]: sort_order } }
-      : { [sort_by]: sort_order }
-    : {};
+  const orderBy =
+    sort_by?.map((field, index) =>
+      field.startsWith("category.")
+        ? { category: { [field.split(".")[1]]: sort_order?.[index] } }
+        : { [field]: sort_order?.[index] }
+    ) || [];
+
+  orderBy.sort((a, b) => {
+    if (a.category && !b.category) return 1;
+    if (!a.category && b.category) return -1;
+    return 0;
+  });
 
   const [entries, total] = await prisma.$transaction([
     prisma.recurringEntry.findMany({

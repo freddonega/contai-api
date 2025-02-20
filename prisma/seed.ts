@@ -101,8 +101,6 @@ async function main() {
   await prisma.entry.createMany({
     data: entries,
   });
-
-  console.log("Seeding concluído");
 }
 
 main()

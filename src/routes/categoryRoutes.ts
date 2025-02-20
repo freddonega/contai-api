@@ -81,6 +81,19 @@ router.post("/category", authenticateToken, createCategoryController);
  *           type: integer
  *           default: 10
  *         description: Número de itens por página
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: [string, array]
+ *         description: Campo de ordenação
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [asc, desc]
+ *         description: Ordem de ordenação (asc ou desc)
  *     responses:
  *       200:
  *         description: Lista de categorias
@@ -106,6 +119,12 @@ router.post("/category", authenticateToken, createCategoryController);
  *                   type: integer
  *                 itemsPerPage:
  *                   type: integer
+ *                 sortBy:
+ *                   type: [string, array]
+ *                   description: Campo de ordenação
+ *                 sortOrder:
+ *                   type: string
+ *                   description: Ordem de ordenação (asc ou desc)
  *       400:
  *         description: Erro de validação
  *       500:

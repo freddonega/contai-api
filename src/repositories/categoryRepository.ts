@@ -35,11 +35,15 @@ export const listCategories = async ({
   page = 1,
   items_per_page,
   user_id,
+  sort_by,
+  sort_order,
 }: {
   search?: string;
   page: number;
   items_per_page: number;
   user_id: number;
+  sort_by?: string[];
+  sort_order?: Prisma.SortOrder;
 }) => {
   const where = {
     user_id,
@@ -51,11 +55,16 @@ export const listCategories = async ({
     }),
   };
 
+  const orderBy = sort_by
+    ? sort_by.map((field) => ({ [field]: sort_order || "asc" }))
+    : [{ created_at: Prisma.SortOrder.desc }];
+
   const [categories, total] = await prisma.$transaction([
     prisma.category.findMany({
       where,
       skip: (page - 1) * items_per_page,
       take: items_per_page,
+      orderBy,
     }),
     prisma.category.count({ where }),
   ]);

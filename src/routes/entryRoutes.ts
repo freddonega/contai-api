@@ -97,13 +97,17 @@ router.post("/entries", authenticateToken, createEntryController);
  *       - in: query
  *         name: sort_by
  *         schema:
- *           type: string
- *         description: Campo para ordenar as entradas
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: Campos para ordenar as entradas
  *       - in: query
  *         name: sort_order
  *         schema:
- *           type: string
- *           enum: [ASC, DESC]
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [asc, desc]
  *         description: Ordem de classificação das entradas
  *     responses:
  *       200:
@@ -136,10 +140,14 @@ router.post("/entries", authenticateToken, createEntryController);
  *                 items_per_page:
  *                   type: integer
  *                 sort_by:
- *                   type: string
+ *                   type: array
+ *                   items:
+ *                     type: string
  *                 sort_order:
- *                   type: string
- *                   enum: [asc, desc]
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                     enum: [asc, desc]
  *       400:
  *         description: Erro de validação
  *       500:

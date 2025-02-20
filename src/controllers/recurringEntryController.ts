@@ -24,8 +24,8 @@ const listRecurringEntriesSchema = z.object({
     (val) => Number(val || 10),
     z.number().min(1).max(100).default(10)
   ),
-  sort_by: z.string().optional(),
-  sort_order: z.enum(["asc", "desc"]).optional(),
+  sort_by: z.array(z.string()).optional(),
+  sort_order: z.array(z.enum(["asc", "desc"])).optional(),
 });
 
 export const createRecurringEntryController = async (
@@ -59,14 +59,25 @@ export const listRecurringEntriesController = async (
   res: Response
 ) => {
   try {
-    const queryData = listRecurringEntriesSchema.parse(req.query);
+    let queryData = listRecurringEntriesSchema.parse(req.query);
+    if (queryData.sort_by && !Array.isArray(queryData.sort_by)) {
+      queryData = { ...queryData, sort_by: [queryData.sort_by] };
+    }
+    if (queryData.sort_order && !Array.isArray(queryData.sort_order)) {
+      queryData = { ...queryData, sort_order: [queryData.sort_order] };
+    }
     const user_id = req.user?.id;
+
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
     const entries = await listRecurringEntries({
       ...queryData,
+      sort_by: queryData.sort_by?.filter((item): item is string => !!item),
+      sort_order: queryData.sort_order?.filter(
+        (item): item is "asc" | "desc" => !!item
+      ),
       user_id,
     });
 

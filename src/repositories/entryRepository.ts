@@ -36,8 +36,8 @@ export const listEntries = async ({
   search?: string;
   page?: number;
   items_per_page: number;
-  sort_by?: string;
-  sort_order?: "asc" | "desc";
+  sort_by?: string[];
+  sort_order?: Array<"asc" | "desc">;
   user_id: number;
 }) => {
   const where = {
@@ -49,11 +49,18 @@ export const listEntries = async ({
     }),
   };
 
-  const orderBy = sort_by
-    ? sort_by.startsWith("category.")
-      ? { category: { [sort_by.split(".")[1]]: sort_order } }
-      : { [sort_by]: sort_order }
-    : {};
+  const orderBy =
+    sort_by?.map((field, index) =>
+      field.startsWith("category.")
+        ? { category: { [field.split(".")[1]]: sort_order?.[index] } }
+        : { [field]: sort_order?.[index] }
+    ) || [];
+
+  orderBy.sort((a, b) => {
+    if (a.category && !b.category) return 1;
+    if (!a.category && b.category) return -1;
+    return 0;
+  });
 
   const [entries, total] = await prisma.$transaction([
     prisma.entry.findMany({
@@ -256,38 +263,51 @@ export async function getHighestCategoryForMonth(
   month: number,
   user_id: number
 ) {
-  const entries = await prisma.entry.findMany({
-    where: {
-      user_id: user_id,
-      period: `${year}-${String(month).padStart(2, "0")}`,
-    },
-    include: {
-      category: true,
-    },
+  const period = `${year}-${String(month).padStart(2, "0")}`;
+
+  const categoryTotals = await prisma.entry.groupBy({
+    by: ["category_id"],
+    where: { user_id, period },
+    _sum: { amount: true },
   });
 
-  const incomeEntries = entries.filter(
-    (entry) => entry.category.type === "income"
-  );
-  const expenseEntries = entries.filter(
-    (entry) => entry.category.type === "expense"
-  );
+  const categories = await prisma.category.findMany({
+    where: { user_id },
+  });
 
-  const highestIncome = incomeEntries.reduce(
-    (max, entry) =>
-      entry.amount > max.amount
-        ? { category: entry.category.name, amount: entry.amount }
-        : max,
-    { category: "", amount: 0 }
-  );
+  // Encontrar a categoria com maior soma para income e expense
+  const highestIncome = categoryTotals
+    .map((entry) => ({
+      ...entry,
+      category: categories.find((cat) => cat.id === entry.category_id),
+    }))
+    .filter((entry) => entry.category?.type === "income")
+    .reduce(
+      (max, entry) =>
+        entry._sum.amount !== null &&
+        entry.category &&
+        entry._sum.amount > max.amount
+          ? { category: entry.category.name, amount: entry._sum.amount }
+          : max,
+      { category: "", amount: 0 }
+    );
 
-  const highestExpense = expenseEntries.reduce(
-    (max, entry) =>
-      entry.amount > max.amount
-        ? { category: entry.category.name, amount: entry.amount }
-        : max,
-    { category: "", amount: 0 }
-  );
+  const highestExpense = categoryTotals
+    .map((entry) => ({
+      ...entry,
+      category: categories.find((cat) => cat.id === entry.category_id),
+    }))
+    .filter((entry) => entry.category?.type === "expense")
+    .reduce(
+      (max, entry) =>
+        (entry._sum.amount ?? 0) > max.amount
+          ? {
+              category: entry.category?.name ?? "",
+              amount: entry._sum.amount ?? 0,
+            }
+          : max,
+      { category: "", amount: 0 }
+    );
 
   return { highestIncome, highestExpense };
 }
@@ -312,30 +332,28 @@ export async function getCategoryComparison(
     user_id
   );
 
-  const incomeChange =
-    previousMonthData.highestIncome.amount === 0
-      ? 0
-      : ((currentMonthData.highestIncome.amount -
-          previousMonthData.highestIncome.amount) /
-          previousMonthData.highestIncome.amount) *
-        100;
-
-  const expenseChange =
-    previousMonthData.highestExpense.amount === 0
-      ? 0
-      : ((currentMonthData.highestExpense.amount -
-          previousMonthData.highestExpense.amount) /
-          previousMonthData.highestExpense.amount) *
-        100;
+  // Calcula a variação percentual, evitando divisão por zero
+  const calculateChange = (current: number, previous: number) =>
+    previous === 0
+      ? current > 0
+        ? 100
+        : 0
+      : ((current - previous) / previous) * 100;
 
   return {
     highestIncome: {
       ...currentMonthData.highestIncome,
-      percentageChange: incomeChange,
+      percentageChange: calculateChange(
+        currentMonthData.highestIncome.amount,
+        previousMonthData.highestIncome.amount
+      ),
     },
     highestExpense: {
       ...currentMonthData.highestExpense,
-      percentageChange: expenseChange,
+      percentageChange: calculateChange(
+        currentMonthData.highestExpense.amount,
+        previousMonthData.highestExpense.amount
+      ),
     },
   };
 }
@@ -345,57 +363,81 @@ export async function getIncomeExpenseRatioForMonth(
   month: number,
   user_id: number
 ): Promise<number> {
-  const entries = await prisma.entry.findMany({
+  const period = `${year}-${String(month).padStart(2, "0")}`;
+
+  // Faz o cálculo direto no banco, evitando processar em memória
+  const { _sum: incomeSum } = await prisma.entry.aggregate({
+    _sum: { amount: true },
     where: {
-      user_id: user_id,
-      period: `${year}-${String(month).padStart(2, "0")}`,
-    },
-    include: {
-      category: true,
+      user_id,
+      period,
+      category: { type: "income" },
     },
   });
 
-  const income = entries
-    .filter((entry) => entry.category.type === "income")
-    .reduce((sum, entry) => sum + entry.amount, 0);
+  const { _sum: expenseSum } = await prisma.entry.aggregate({
+    _sum: { amount: true },
+    where: {
+      user_id,
+      period,
+      category: { type: "expense" },
+    },
+  });
 
-  const expense = entries
-    .filter((entry) => entry.category.type === "expense")
-    .reduce((sum, entry) => sum + entry.amount, 0);
+  const income = incomeSum.amount ?? 0;
+  const expense = expenseSum.amount ?? 0;
 
-  return expense === 0 ? 0 : income / expense;
+  return expense === 0 ? Infinity : income / expense;
 }
 
 export async function getSurvivalTime(user_id: number): Promise<number> {
-  const currentBalance = await prisma.entry.aggregate({
-    _sum: {
-      amount: true,
-    },
+  // Calcula o saldo atual (soma de todas as receitas - soma de todas as despesas)
+  const { _sum: incomeSum } = await prisma.entry.aggregate({
+    _sum: { amount: true },
     where: {
-      user_id: user_id,
-      category: {
-        type: "income",
+      user_id,
+      category: { type: "income" },
+    },
+  });
+
+  const { _sum: expenseSum } = await prisma.entry.aggregate({
+    _sum: { amount: true },
+    where: {
+      user_id,
+      category: { type: "expense" },
+    },
+  });
+
+  const currentBalance = (incomeSum.amount ?? 0) - (expenseSum.amount ?? 0);
+
+  // Obtém os gastos dos últimos 12 meses para calcular a média mensal corretamente
+  const expensesByMonth = await prisma.entry.groupBy({
+    by: ["period"],
+    _sum: { amount: true },
+    where: {
+      user_id,
+      category: { type: "expense" },
+      period: {
+        gte: `${new Date().getFullYear() - 1}-${String(
+          new Date().getMonth() + 1
+        ).padStart(2, "0")}`, // Últimos 12 meses
       },
     },
   });
 
-  const totalExpenses = await prisma.entry.aggregate({
-    _sum: {
-      amount: true,
-    },
-    where: {
-      user_id: user_id,
-      category: {
-        type: "expense",
-      },
-    },
-  });
+  // Calcula a média mensal de despesas apenas com os meses que tiveram gastos
+  const totalExpenses = expensesByMonth.reduce(
+    (sum, entry) => sum + (entry._sum.amount ?? 0),
+    0
+  );
 
-  const averageMonthlyExpenses = (totalExpenses._sum.amount ?? 0) / 12;
+  const monthsWithExpenses = expensesByMonth.length || 1; // Evita divisão por zero
+  const averageMonthlyExpenses = totalExpenses / monthsWithExpenses;
 
+  // Calcula o tempo de sobrevivência (meses)
   return averageMonthlyExpenses === 0
     ? Infinity
-    : (currentBalance._sum.amount ?? 0) / averageMonthlyExpenses;
+    : currentBalance / averageMonthlyExpenses;
 }
 
 export const getTotalBalance = async (user_id: number): Promise<number> => {

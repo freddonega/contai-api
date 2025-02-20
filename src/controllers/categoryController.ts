@@ -23,6 +23,8 @@ const listCategoriesSchema = z.object({
     (val) => Number(val || 10),
     z.number().min(1).default(10)
   ),
+  sort_by: z.union([z.string(), z.array(z.string())]).optional(),
+  sort_order: z.enum(["asc", "desc"]).optional(),
 });
 
 export const createCategoryController = async (req: Request, res: Response) => {
@@ -58,7 +60,19 @@ export const listCategoriesController = async (req: Request, res: Response) => {
       return;
     }
 
-    const categories = await listCategories({ ...queryData, user_id });
+    if (typeof queryData.sort_by === "string") {
+      queryData.sort_by = [queryData.sort_by];
+    }
+
+    const categories = await listCategories({
+      ...queryData,
+      user_id,
+      sort_by: Array.isArray(queryData.sort_by)
+        ? queryData.sort_by
+        : queryData.sort_by
+        ? [queryData.sort_by]
+        : undefined,
+    });
     res.json(categories);
   } catch (error) {
     if (error instanceof ZodError) {
