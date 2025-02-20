@@ -5,7 +5,8 @@ import {
   getMonthlyBalance,
   getCategoryComparison,
   getIncomeExpenseRatioForMonth,
-  getSurvivalTime, // Add this import
+  getSurvivalTime,
+  getTotalBalance, // Add this import
 } from "../repositories/entryRepository";
 
 export const getDashboard = async (
@@ -161,6 +162,25 @@ export const getSurvivalTimeController = async (
 
     const survivalTime = await getSurvivalTime(user_id);
     res.json({ survivalTime });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getTotalBalanceController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user_id = req?.user?.id;
+    if (typeof user_id !== "number") {
+      res.status(400).json({ error: "Invalid user ID" });
+      return;
+    }
+
+    const totalBalance = await getTotalBalance(user_id);
+    res.json({ totalBalance });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

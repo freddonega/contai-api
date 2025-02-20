@@ -5,7 +5,8 @@ import {
   getCurrentMonthBalance,
   getCategoryComparisonController,
   getIncomeExpenseRatio,
-  getSurvivalTimeController, // Add this import
+  getSurvivalTimeController,
+  getTotalBalanceController, // Add this import
 } from "../controllers/dashboardController";
 import { authenticateToken } from "../middleware/authMiddleware";
 
@@ -224,6 +225,33 @@ router.get(
   "/dashboard/balance/survival",
   authenticateToken,
   getSurvivalTimeController
+);
+
+/**
+ * @swagger
+ * /dashboard/balance/total:
+ *   get:
+ *     summary: Retrieve the total balance for the user
+ *     tags: [Dashboard]
+ *     responses:
+ *       200:
+ *         description: The total balance
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalBalance:
+ *                   type: number
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/dashboard/balance/total",
+  authenticateToken,
+  getTotalBalanceController
 );
 
 export default router;

@@ -397,3 +397,31 @@ export async function getSurvivalTime(user_id: number): Promise<number> {
     ? Infinity
     : (currentBalance._sum.amount ?? 0) / averageMonthlyExpenses;
 }
+
+export const getTotalBalance = async (user_id: number): Promise<number> => {
+  const income = await prisma.entry.aggregate({
+    _sum: {
+      amount: true,
+    },
+    where: {
+      user_id,
+      category: {
+        type: "income",
+      },
+    },
+  });
+
+  const expense = await prisma.entry.aggregate({
+    _sum: {
+      amount: true,
+    },
+    where: {
+      user_id,
+      category: {
+        type: "expense",
+      },
+    },
+  });
+
+  return (income._sum.amount || 0) - (expense._sum.amount || 0);
+};
