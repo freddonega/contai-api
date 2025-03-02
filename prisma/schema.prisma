@@ -34,16 +34,18 @@ model Category {
 }
 
 model Entry {
-  id          Int      @id @default(autoincrement())
-  amount      Float
-  description String?
-  category_id Int
-  user_id     Int
-  period      String
-  user        User     @relation(fields: [user_id], references: [id])
-  category    Category @relation(fields: [category_id], references: [id])
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id              Int          @id @default(autoincrement())
+  amount          Float
+  description     String?
+  category_id     Int
+  user_id         Int
+  period          String
+  payment_type_id Int?
+  user            User         @relation(fields: [user_id], references: [id])
+  category        Category     @relation(fields: [category_id], references: [id])
+  payment_type    PaymentType? @relation(fields: [payment_type_id], references: [id])
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
 }
 
 model RecurringEntry {
@@ -59,4 +61,12 @@ model RecurringEntry {
 
   user     User     @relation(fields: [user_id], references: [id])
   category Category @relation(fields: [category_id], references: [id])
+}
+
+model PaymentType {
+  id         Int      @id @default(autoincrement())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  entries    Entry[]
 }

@@ -38,6 +38,8 @@ const router = Router();
  *                 type: integer
  *               period:
  *                 type: string
+ *               payment_type_id:
+ *                 type: integer
  *             required:
  *               - amount
  *               - category_id
@@ -61,6 +63,8 @@ const router = Router();
  *                 user_id:
  *                   type: integer
  *                 period:
+ *                 payment_type_id:
+ *                   type: integer
  *       400:
  *         description: Erro de validação.
  *       401:
@@ -222,6 +226,8 @@ router.get("/entries/:id", authenticateToken, getEntryController);
  *                 type: integer
  *               period:
  *                 type: string
+ *               payment_type_id:
+ *                 type: integer
  *             required:
  *               - amount
  *               - category_id
@@ -245,6 +251,8 @@ router.get("/entries/:id", authenticateToken, getEntryController);
  *                 user_id:
  *                   type: integer
  *                 period:
+ *                 payment_type_id:
+ *                   type: integer
  *       400:
  *         description: Erro de validação
  *       404:

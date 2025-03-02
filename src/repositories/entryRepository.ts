@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export const createEntry = async (
   data: Omit<Entry, "id" | "created_at" | "updated_at">
-): Promise<Omit<Entry, "user_id" | "category_id">> => {
+): Promise<Omit<Entry, "user_id" | "category_id" | "payment_type_id">> => {
   return prisma.entry.create({
     data,
     select: {
@@ -19,6 +19,12 @@ export const createEntry = async (
           id: true,
           name: true,
           type: true,
+        },
+      },
+      payment_type: {
+        select: {
+          id: true,
+          name: true,
         },
       },
     },
@@ -98,6 +104,21 @@ export const listEntries = async ({
 export const getEntry = async (id: number): Promise<Entry | null> => {
   return prisma.entry.findUnique({
     where: { id },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      },
+      payment_type: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
 };
 

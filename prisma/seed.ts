@@ -28,6 +28,15 @@ async function main() {
     ],
   });
 
+  // Cria tipos de pagamento
+  await prisma.paymentType.createMany({
+    data: [
+      { name: "Cartão de Crédito" },
+      { name: "Dinheiro" },
+      { name: "Transferência Bancária" },
+    ],
+  });
+
   // Obtém todas as categorias criadas
   const allCategories = await prisma.category.findMany({
     where: { user_id: user.id },

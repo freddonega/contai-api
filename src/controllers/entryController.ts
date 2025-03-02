@@ -18,6 +18,7 @@ const entrySchema = z.object({
       /^\d{4}-(0[1-9]|1[0-2])$/,
       "Formato de período inválido, deve ser YYYY-MM"
     ),
+  payment_type_id: z.number().optional(),
 });
 
 const listEntriesSchema = z.object({
@@ -45,6 +46,7 @@ export const createEntryController = async (req: Request, res: Response) => {
       ...entryData,
       user_id,
       description: entryData.description ?? null,
+      payment_type_id: entryData.payment_type_id ?? null,
     });
     res.json(entry);
   } catch (error) {
