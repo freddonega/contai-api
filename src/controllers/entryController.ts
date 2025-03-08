@@ -30,6 +30,11 @@ const listEntriesSchema = z.object({
   ),
   sort_by: z.array(z.string()).optional(),
   sort_order: z.array(z.enum(["asc", "desc"])).optional(),
+  category_id: z.string().optional(),
+  category_type: z.string().optional(),
+  payment_type_id: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 export const createEntryController = async (req: Request, res: Response) => {
@@ -81,6 +86,11 @@ export const listEntriesController = async (req: Request, res: Response) => {
         (item): item is "asc" | "desc" => !!item
       ),
       user_id,
+      category_id: Number(queryData.category_id),
+      category_type: queryData.category_type,
+      payment_type_id: Number(queryData.payment_type_id),
+      from: queryData.from,
+      to: queryData.to,
     });
     res.json(entries);
   } catch (error) {

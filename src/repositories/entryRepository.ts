@@ -38,6 +38,11 @@ export const listEntries = async ({
   sort_by,
   sort_order,
   user_id,
+  category_id,
+  category_type,
+  payment_type_id,
+  from,
+  to,
 }: {
   search?: string;
   page?: number;
@@ -45,6 +50,11 @@ export const listEntries = async ({
   sort_by?: string[];
   sort_order?: Array<"asc" | "desc">;
   user_id: number;
+  category_id?: number;
+  category_type?: string;
+  payment_type_id?: number;
+  from?: string;
+  to?: string;
 }) => {
   const where = {
     user_id,
@@ -53,6 +63,20 @@ export const listEntries = async ({
         contains: search,
       },
     }),
+    ...(category_id && { category_id }),
+    ...(category_type && {
+      category: {
+        type: category_type,
+      },
+    }),
+    ...(payment_type_id && { payment_type_id }),
+    ...(from &&
+      to && {
+        period: {
+          gte: from,
+          lte: to,
+        },
+      }),
   };
 
   const orderBy =
