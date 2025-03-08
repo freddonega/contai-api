@@ -6,7 +6,8 @@ import {
   getCategoryComparison,
   getIncomeExpenseRatioForMonth,
   getSurvivalTime,
-  getTotalBalance, // Add this import
+  getTotalBalance,
+  getMonthlyTotalsByType, // Add this import
 } from "../repositories/entryRepository";
 
 export const getDashboard = async (
@@ -181,6 +182,39 @@ export const getTotalBalanceController = async (
 
     const totalBalance = await getTotalBalance(user_id);
     res.json({ totalBalance });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getMonthlyTotalsByTypeController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user_id = req?.user?.id;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+
+    if (typeof user_id !== "number") {
+      res.status(400).json({ error: "Invalid user ID" });
+      return;
+    }
+
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+      res.status(400).json({ error: "Invalid year or month parameter" });
+      return;
+    }
+
+    const totals = await getMonthlyTotalsByType(user_id, year, month);
+    const formattedTotals = Object.entries(totals).map(
+      ([payment_type_name, total]) => ({
+        payment_type_name,
+        total,
+      })
+    );
+    res.json(formattedTotals);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

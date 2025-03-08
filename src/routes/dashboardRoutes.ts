@@ -7,6 +7,7 @@ import {
   getIncomeExpenseRatio,
   getSurvivalTimeController,
   getTotalBalanceController, // Add this import
+  getMonthlyTotalsByTypeController, // Add this import
 } from "../controllers/dashboardController";
 import { authenticateToken } from "../middleware/authMiddleware";
 
@@ -252,6 +253,50 @@ router.get(
   "/dashboard/balance/total",
   authenticateToken,
   getTotalBalanceController
+);
+
+/**
+ * @swagger
+ * /dashboard/{year}/{month}/totals_by_type:
+ *   get:
+ *     summary: Lista o somatório por mês das movimentações agrupadas por tipo de pagamento
+ *     tags: [Dashboard]
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The year for which to retrieve the totals
+ *       - in: path
+ *         name: month
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The month for which to retrieve the totals
+ *     responses:
+ *       200:
+ *         description: Somatório por mês das movimentações agrupadas por tipo de pagamento
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   payment_type_name:
+ *                     type: string
+ *                   total:
+ *                     type: number
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/dashboard/:year/:month/totals_by_type",
+  authenticateToken,
+  getMonthlyTotalsByTypeController
 );
 
 export default router;

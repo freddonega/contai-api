@@ -488,3 +488,35 @@ export const getTotalBalance = async (user_id: number): Promise<number> => {
 
   return (income._sum.amount || 0) - (expense._sum.amount || 0);
 };
+
+export async function getMonthlyTotalsByType(
+  user_id: number,
+  year: number,
+  month: number
+) {
+  const period = `${year}-${String(month).padStart(2, "0")}`;
+
+  const entries = await prisma.entry.groupBy({
+    by: ["period", "payment_type_id"],
+    where: { user_id, period },
+    _sum: { amount: true },
+  });
+
+  const paymentTypes = await prisma.paymentType.findMany();
+
+  const totalsByType = entries.reduce((acc, entry) => {
+    const paymentType = paymentTypes.find(
+      (pt) => pt.id === entry.payment_type_id
+    );
+    if (paymentType) {
+      const payment_type_name = paymentType.name;
+      if (!acc[payment_type_name]) {
+        acc[payment_type_name] = 0;
+      }
+      acc[payment_type_name] += entry._sum.amount ?? 0;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  return totalsByType;
+}
