@@ -1,4 +1,5 @@
 import { PrismaClient, Entry } from "@prisma/client";
+import { PrismaPromise } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
@@ -92,28 +93,55 @@ export const listEntries = async ({
     return 0;
   });
 
-  const [entries, total] = await prisma.$transaction([
-    prisma.entry.findMany({
-      where,
-      skip: (page - 1) * items_per_page,
-      take: items_per_page,
-      orderBy,
-      select: {
-        id: true,
-        description: true,
-        amount: true,
-        period: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
+  const [entries, total, incomeResult, expenseResult] =
+    await prisma.$transaction([
+      prisma.entry.findMany({
+        where,
+        skip: (page - 1) * items_per_page,
+        take: items_per_page,
+        orderBy,
+        select: {
+          id: true,
+          description: true,
+          amount: true,
+          period: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
           },
         },
-      },
-    }),
-    prisma.entry.count({ where }),
-  ]);
+      }),
+      prisma.entry.count({ where }),
+      prisma.entry.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          ...where,
+          category: {
+            type: "income",
+          },
+        },
+      }),
+      prisma.entry.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          ...where,
+          category: {
+            type: "expense",
+          },
+        },
+      }),
+    ]);
+
+  const income = incomeResult._sum.amount || 0;
+  const expense = expenseResult._sum.amount || 0;
+  const total_amount = income - expense; // Income - Expense
 
   return {
     entries,
@@ -122,6 +150,7 @@ export const listEntries = async ({
     items_per_page,
     sort_by,
     sort_order,
+    total_amount,
   };
 };
 

@@ -79,7 +79,15 @@ export const listEntriesController = async (req: Request, res: Response) => {
       return;
     }
 
-    const entries = await listEntries({
+    const {
+      entries,
+      total,
+      page,
+      items_per_page,
+      sort_by,
+      sort_order,
+      total_amount,
+    } = await listEntries({
       ...queryData,
       sort_by: queryData.sort_by?.filter((item): item is string => !!item),
       sort_order: queryData.sort_order?.filter(
@@ -92,8 +100,18 @@ export const listEntriesController = async (req: Request, res: Response) => {
       from: queryData.from,
       to: queryData.to,
     });
-    res.json(entries);
+
+    res.json({
+      entries,
+      total,
+      page,
+      items_per_page,
+      sort_by,
+      sort_order,
+      total_amount,
+    });
   } catch (error) {
+    console.log(error);
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
