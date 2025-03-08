@@ -93,54 +93,70 @@ export const listEntries = async ({
     return 0;
   });
 
-  const [entries, total, incomeResult, expenseResult] =
-    await prisma.$transaction([
-      prisma.entry.findMany({
-        where,
-        skip: (page - 1) * items_per_page,
-        take: items_per_page,
-        orderBy,
-        select: {
-          id: true,
-          description: true,
-          amount: true,
-          period: true,
-          category: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-            },
-          },
-        },
-      }),
-      prisma.entry.count({ where }),
-      prisma.entry.aggregate({
-        _sum: {
-          amount: true,
-        },
-        where: {
-          ...where,
-          category: {
-            type: "income",
-          },
-        },
-      }),
-      prisma.entry.aggregate({
-        _sum: {
-          amount: true,
-        },
-        where: {
-          ...where,
-          category: {
-            type: "expense",
-          },
-        },
-      }),
-    ]);
+  // Condicionalmente, determinamos qual agregação buscar
+  let incomeResult = null;
+  let expenseResult = null;
 
-  const income = incomeResult._sum.amount || 0;
-  const expense = expenseResult._sum.amount || 0;
+  if (category_type === "income" || !category_type) {
+    incomeResult = prisma.entry.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        ...where,
+        category: {
+          type: "income",
+        },
+      },
+    });
+  }
+
+  if (category_type === "expense" || !category_type) {
+    expenseResult = prisma.entry.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        ...where,
+        category: {
+          type: "expense",
+        },
+      },
+    });
+  }
+
+  // Filtragem principal
+  const [entries, total] = await prisma.$transaction([
+    prisma.entry.findMany({
+      where,
+      skip: (page - 1) * items_per_page,
+      take: items_per_page,
+      orderBy,
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        period: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+      },
+    }),
+    prisma.entry.count({ where }),
+  ]);
+
+  // Espera as agregações
+  const [incomeResultData, expenseResultData] = await Promise.all([
+    incomeResult,
+    expenseResult,
+  ]);
+
+  const income = incomeResultData?._sum.amount || 0;
+  const expense = expenseResultData?._sum.amount || 0;
   const total_amount = income - expense; // Income - Expense
 
   return {
