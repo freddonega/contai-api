@@ -67,7 +67,7 @@ model RecurringEntry {
 model PaymentType {
   id         Int      @id @default(autoincrement())
   name       String
-  user_id    Int      @default(9)
+  user_id    Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   entries    Entry[]
