@@ -15,6 +15,7 @@ model User {
   entries          Entry[]
   categories       Category[]
   recurringEntries RecurringEntry[]
+  paymentTypes     PaymentType[]
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
 }
@@ -66,7 +67,10 @@ model RecurringEntry {
 model PaymentType {
   id         Int      @id @default(autoincrement())
   name       String
+  user_id    Int      @default(9)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   entries    Entry[]
+
+  user User @relation(fields: [user_id], references: [id])
 }

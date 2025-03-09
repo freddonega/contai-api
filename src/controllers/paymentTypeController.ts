@@ -18,7 +18,17 @@ export const createPaymentTypeController = async (
 ) => {
   try {
     const paymentTypeData = paymentTypeSchema.parse(req.body);
-    const paymentType = await createPaymentType(paymentTypeData);
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
+      return;
+    }
+
+    const paymentType = await createPaymentType({
+      ...paymentTypeData,
+      user_id,
+    });
     res.json(paymentType);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -34,7 +44,14 @@ export const listPaymentTypesController = async (
   res: Response
 ) => {
   try {
-    const paymentTypes = await listPaymentTypes();
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
+      return;
+    }
+
+    const paymentTypes = await listPaymentTypes(user_id);
     res.json(paymentTypes);
   } catch (error) {
     res.status(500).json({ error: "Erro Interno do Servidor" });
@@ -44,7 +61,14 @@ export const listPaymentTypesController = async (
 export const getPaymentTypeController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const paymentType = await getPaymentType(parseInt(id));
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
+      return;
+    }
+
+    const paymentType = await getPaymentType(parseInt(id), user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
@@ -63,17 +87,24 @@ export const updatePaymentTypeController = async (
   try {
     const { id } = req.params;
     const paymentTypeData = paymentTypeSchema.parse(req.body);
-    const paymentType = await getPaymentType(parseInt(id));
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
+      return;
+    }
+
+    const paymentType = await getPaymentType(parseInt(id), user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
       return;
     }
 
-    const updatedPaymentType = await updatePaymentType(
-      parseInt(id),
-      paymentTypeData
-    );
+    const updatedPaymentType = await updatePaymentType(parseInt(id), {
+      ...paymentTypeData,
+      user_id,
+    });
     res.json(updatedPaymentType);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -90,14 +121,21 @@ export const deletePaymentTypeController = async (
 ) => {
   try {
     const { id } = req.params;
-    const paymentType = await getPaymentType(parseInt(id));
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      res.status(401).json({ error: "ID do usuário não encontrado no token" });
+      return;
+    }
+
+    const paymentType = await getPaymentType(parseInt(id), user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
       return;
     }
 
-    await deletePaymentType(parseInt(id));
+    await deletePaymentType(parseInt(id), user_id);
     res.json({ message: "Tipo de pagamento deletado" });
   } catch (error) {
     res.status(500).json({ error: "Erro Interno do Servidor" });
