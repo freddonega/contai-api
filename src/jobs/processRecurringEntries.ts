@@ -17,6 +17,7 @@ export const processRecurringEntries = async () => {
       data: {
         user_id: entry.user_id,
         category_id: entry.category_id,
+        payment_type_id: entry.payment_type_id,
         amount: entry.amount,
         description: entry.description,
         period: entry.next_run.toISOString().slice(0, 7), // Formato YYYY-MM
