@@ -256,36 +256,40 @@ export async function getTotalsByCategoryForMonth(
   month: number,
   user_id: number
 ) {
-  const entries = await prisma.entry.findMany({
+  const entries = await prisma.entry.groupBy({
+    by: ["category_id"], // Agrupar por categoria
     where: {
       user_id: user_id,
       period: `${year}-${String(month).padStart(2, "0")}`,
     },
-    include: {
-      category: true,
+    _sum: {
+      amount: true, // Somar os valores de 'amount'
     },
   });
 
+  // Extrair os IDs das categorias que possuem entradas
+  const categoryIds = entries.map((entry) => entry.category_id);
+
+  // Segunda consulta: buscar os detalhes das categorias (name e type)
   const categories = await prisma.category.findMany({
     where: {
-      user_id,
+      id: { in: categoryIds },
+      user_id: user_id,
     },
   });
 
-  const totals = categories.map((category) => {
-    const total = entries
-      .filter((entry) => entry.category.id === category.id)
-      .reduce((sum, entry) => sum + entry.amount, 0);
-
+  // Combinar os resultados de entries e categorias
+  const result = entries.map((entry) => {
+    const category = categories.find((cat) => cat.id === entry.category_id);
     return {
-      category_id: category.id,
-      category_name: category.name,
-      type: category.type,
-      total,
+      category_id: entry.category_id,
+      category_name: category?.name,
+      type: category?.type,
+      total: entry._sum.amount,
     };
   });
 
-  return totals;
+  return result;
 }
 
 export async function getMonthlyBalance(

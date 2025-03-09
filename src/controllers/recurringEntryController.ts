@@ -8,12 +8,15 @@ import {
   deleteRecurringEntry,
 } from "../repositories/recurringEntryRepository";
 
+import { getCategory } from "../repositories/categoryRepository";
+
 const recurringEntrySchema = z.object({
   user_id: z.number(),
   amount: z.number(),
   description: z.string(),
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
   category_id: z.number(),
+  payment_type_id: z.number().nullable().default(null),
   next_run: z.string().transform((str) => new Date(str)),
 });
 
@@ -43,6 +46,22 @@ export const createRecurringEntryController = async (
       ...req.body,
       user_id,
     });
+
+    // Verificar se a categoria é do tipo "expense" e se payment_type_id está presente
+    const category = await getCategory(
+      entryData.category_id ? entryData.category_id : 0
+    );
+
+    if (category?.type === "expense" && !entryData.payment_type_id) {
+      res
+        .status(400)
+        .json({
+          error:
+            "payment_type_id é obrigatório para categorias do tipo expense",
+        });
+      return;
+    }
+
     const entry = await createRecurringEntry(entryData);
     res.json(entry);
   } catch (error) {
@@ -99,6 +118,10 @@ export const getRecurringEntryController = async (
     const id = Number(req.params.id);
     const user_id = req.user?.id;
     const entry = await getRecurringEntry(id);
+    if (!entry) {
+      res.status(404).json({ error: "Entrada recorrente não encontrada" });
+      return;
+    }
 
     if (!entry || entry.user.id !== user_id) {
       res.status(404).json({ error: "Entrada recorrente não encontrada" });
@@ -123,9 +146,29 @@ export const updateRecurringEntryController = async (
       res.status(404).json({ error: "Entrada recorrente não encontrada" });
       return;
     }
-    const entryData = recurringEntrySchema.partial().parse(req.body);
-    const updateEntry = await updateRecurringEntry(id, entryData);
 
+    const entryData = recurringEntrySchema.partial().parse(req.body);
+
+    // Verificar se a categoria é do tipo "expense" e se payment_type_id está presente
+    const category = await getCategory(
+      entryData.category_id ? entryData.category_id : 0
+    );
+
+    if (
+      category?.type === "expense" &&
+      !entryData.payment_type_id &&
+      !entry?.payment_type.id
+    ) {
+      res
+        .status(400)
+        .json({
+          error:
+            "payment_type_id é obrigatório para categorias do tipo expense",
+        });
+      return;
+    }
+
+    const updateEntry = await updateRecurringEntry(id, entryData);
     res.json(updateEntry);
   } catch (error) {
     if (error instanceof ZodError) {

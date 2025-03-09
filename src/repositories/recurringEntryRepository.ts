@@ -92,9 +92,10 @@ export const listRecurringEntries = async ({
 export const getRecurringEntry = async (
   id: number
 ): Promise<
-  | (Omit<RecurringEntry, "user_id" | "category_id"> & {
+  | (Omit<RecurringEntry, "user_id" | "category_id" | "payment_type_id"> & {
       user: any;
       category: any;
+      payment_type: any;
     })
   | null
 > => {
@@ -107,6 +108,12 @@ export const getRecurringEntry = async (
       description: true,
       frequency: true,
       category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      payment_type: {
         select: {
           id: true,
           name: true,
