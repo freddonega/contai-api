@@ -1,5 +1,6 @@
 import { PrismaClient, Category, Prisma } from "@prisma/client";
 import { CategoryException } from "../exceptions/CategoryException";
+import { removeAccents } from "../utils/stringUtils";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,7 @@ export const createCategory = async (
 
 interface ListCategoriesParams {
   user_id: string;
+  search?: string;
   type?: string;
   page?: number;
   items_per_page?: number;
@@ -34,6 +36,7 @@ interface ListCategoriesParams {
 
 export const listCategories = async ({
   user_id,
+  search,
   type,
   page = 1,
   items_per_page = 10,
@@ -52,16 +55,29 @@ export const listCategories = async ({
   const [categories, total] = await prisma.$transaction([
     prisma.category.findMany({
       where,
-      skip: (page - 1) * items_per_page,
-      take: items_per_page,
       orderBy,
     }),
     prisma.category.count({ where }),
   ]);
 
+  // Filtra os resultados para garantir que a busca sem acentos funcione
+  const filteredCategories = search
+    ? categories.filter((category) => {
+        const categoryNameWithoutAccents = removeAccents(category.name.toLowerCase());
+        const searchWithoutAccents = removeAccents(search.toLowerCase());
+        return categoryNameWithoutAccents.includes(searchWithoutAccents);
+      })
+    : categories;
+
+  // Aplica a paginação após a filtragem
+  const paginatedCategories = filteredCategories.slice(
+    (page - 1) * items_per_page,
+    page * items_per_page
+  );
+
   return {
-    categories,
-    total,
+    categories: paginatedCategories,
+    total: filteredCategories.length,
     page,
     items_per_page,
     sort_by,

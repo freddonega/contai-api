@@ -1,4 +1,5 @@
-import { PrismaClient, RecurringEntry } from "@prisma/client";
+import { PrismaClient, RecurringEntry, Prisma } from "@prisma/client";
+import { removeAccents } from "../utils/stringUtils";
 
 const prisma = new PrismaClient();
 
@@ -33,6 +34,7 @@ export const createRecurringEntry = async (
 
 interface ListRecurringEntriesParams {
   user_id: string;
+  search?: string;
   page?: number;
   items_per_page?: number;
   sort_by?: string[];
@@ -41,6 +43,7 @@ interface ListRecurringEntriesParams {
 
 export const listRecurringEntries = async ({
   user_id,
+  search,
   page = 1,
   items_per_page = 10,
   sort_by,
@@ -57,8 +60,6 @@ export const listRecurringEntries = async ({
   const [recurring_entries, total] = await prisma.$transaction([
     prisma.recurringEntry.findMany({
       where,
-      skip: (page - 1) * items_per_page,
-      take: items_per_page,
       orderBy: order_by,
       include: {
         category: {
@@ -78,9 +79,24 @@ export const listRecurringEntries = async ({
     prisma.recurringEntry.count({ where }),
   ]);
 
+  // Filtra os resultados para garantir que a busca sem acentos funcione
+  const filteredEntries = search
+    ? recurring_entries.filter((entry) => {
+        const descriptionWithoutAccents = removeAccents(entry.description?.toLowerCase() || '');
+        const searchWithoutAccents = removeAccents(search.toLowerCase());
+        return descriptionWithoutAccents.includes(searchWithoutAccents);
+      })
+    : recurring_entries;
+
+  // Aplica a paginação após a filtragem
+  const paginatedEntries = filteredEntries.slice(
+    (page - 1) * items_per_page,
+    page * items_per_page
+  );
+
   return {
-    recurring_entries,
-    total,
+    recurring_entries: paginatedEntries,
+    total: filteredEntries.length,
     page,
     items_per_page,
     sort_by,

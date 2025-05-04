@@ -74,6 +74,7 @@ export const listRecurringEntriesController = async (
 
     const result = await listRecurringEntries({
       user_id,
+      search: queryData.search,
       page: queryData.page,
       items_per_page: queryData.items_per_page,
       sort_by: Array.isArray(queryData.sort_by) ? queryData.sort_by : queryData.sort_by ? [queryData.sort_by] : undefined,

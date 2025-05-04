@@ -65,6 +65,7 @@ export const listCategoriesController = async (req: Request, res: Response) => {
 
     const result = await listCategories({
       user_id,
+      search: queryData.search,
       type,
       page: queryData.page,
       items_per_page: queryData.items_per_page,
