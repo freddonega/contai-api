@@ -4,83 +4,82 @@ const prisma = new PrismaClient();
 
 export const createRecurringEntry = async (
   data: Omit<RecurringEntry, "id" | "created_at" | "updated_at">
-): Promise<RecurringEntry> => {
+): Promise<Omit<RecurringEntry, "user_id" | "category_id" | "payment_type_id">> => {
   return prisma.recurringEntry.create({
     data,
+    select: {
+      id: true,
+      amount: true,
+      description: true,
+      frequency: true,
+      next_run: true,
+      created_at: true,
+      updated_at: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      payment_type: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
 };
 
-export const listRecurringEntries = async ({
-  user_id,
-  search,
-  page = 1,
-  items_per_page,
-  sort_by,
-  sort_order,
-}: {
-  user_id: number;
-  search?: string;
+interface ListRecurringEntriesParams {
+  user_id: string;
   page?: number;
-  items_per_page: number;
+  items_per_page?: number;
   sort_by?: string[];
   sort_order?: Array<"asc" | "desc">;
-}) => {
+}
+
+export const listRecurringEntries = async ({
+  user_id,
+  page = 1,
+  items_per_page = 10,
+  sort_by,
+  sort_order,
+}: ListRecurringEntriesParams) => {
   const where = {
     user_id,
-    ...(search && {
-      description: {
-        contains: search,
-      },
-    }),
   };
 
-  const orderBy =
-    sort_by?.map((field, index) =>
-      field.startsWith("category.")
-        ? { category: { [field.split(".")[1]]: sort_order?.[index] } }
-        : { [field]: sort_order?.[index] }
-    ) || [];
+  const order_by = sort_by?.map((field, index) => ({
+    [field]: sort_order?.[index] || "asc",
+  })) || [];
 
-  orderBy.sort((a, b) => {
-    if (a.category && !b.category) return 1;
-    if (!a.category && b.category) return -1;
-    return 0;
-  });
-
-  const [entries, total] = await prisma.$transaction([
+  const [recurring_entries, total] = await prisma.$transaction([
     prisma.recurringEntry.findMany({
       where,
       skip: (page - 1) * items_per_page,
       take: items_per_page,
-      orderBy,
-      select: {
-        id: true,
-        amount: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        description: true,
-        frequency: true,
+      orderBy: order_by,
+      include: {
         category: {
           select: {
             id: true,
             name: true,
-            type: true,
           },
         },
-        next_run: true,
-        created_at: true,
-        updated_at: true,
+        payment_type: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     }),
     prisma.recurringEntry.count({ where }),
   ]);
 
   return {
-    entries,
+    recurring_entries,
     total,
     page,
     items_per_page,
@@ -90,7 +89,7 @@ export const listRecurringEntries = async ({
 };
 
 export const getRecurringEntry = async (
-  id: number
+  id: string
 ): Promise<
   | (Omit<RecurringEntry, "user_id" | "category_id" | "payment_type_id"> & {
       user: any;
@@ -127,7 +126,7 @@ export const getRecurringEntry = async (
 };
 
 export const updateRecurringEntry = async (
-  id: number,
+  id: string,
   data: Partial<RecurringEntry>
 ): Promise<RecurringEntry> => {
   return prisma.recurringEntry.update({
@@ -136,7 +135,7 @@ export const updateRecurringEntry = async (
   });
 };
 
-export const deleteRecurringEntry = async (id: number): Promise<void> => {
+export const deleteRecurringEntry = async (id: string): Promise<void> => {
   await prisma.recurringEntry.delete({
     where: { id },
   });

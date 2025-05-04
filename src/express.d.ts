@@ -8,4 +8,6 @@ declare global {
   }
 }
 
+export {};
+
 const test: number = "This should cause a type error";

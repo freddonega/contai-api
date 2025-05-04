@@ -21,7 +21,7 @@ const router = Router();
  * @swagger
  * /entries:
  *   post:
- *     summary: Cria uma nova entrada.
+ *     summary: Cria uma nova entrada
  *     tags: [Entries]
  *     requestBody:
  *       required: true
@@ -35,42 +35,52 @@ const router = Router();
  *               description:
  *                 type: string
  *               category_id:
- *                 type: integer
+ *                 type: string
  *               period:
  *                 type: string
+ *                 description: Formato YYYY-MM
  *               payment_type_id:
- *                 type: integer
+ *                 type: string
  *             required:
  *               - amount
  *               - category_id
  *               - period
  *     responses:
  *       200:
- *         description: Entrada criada com sucesso.
+ *         description: Entrada criada com sucesso
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 amount:
  *                   type: number
  *                 description:
  *                   type: string
- *                 category_id:
- *                   type: integer
- *                 user_id:
- *                   type: integer
  *                 period:
- *                 payment_type_id:
- *                   type: integer
+ *                   type: string
+ *                 category:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
  *       400:
- *         description: Erro de validação.
- *       401:
- *         description: User ID not found in token.
+ *         description: Erro de validação
  *       500:
- *         description: Erro Interno do Servidor.
+ *         description: Erro Interno do Servidor
  */
 router.post("/entries", authenticateToken, createEntryController);
 
@@ -169,7 +179,7 @@ router.get("/entries", authenticateToken, listEntriesController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da entrada
  *     responses:
@@ -181,16 +191,29 @@ router.get("/entries", authenticateToken, listEntriesController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 amount:
  *                   type: number
  *                 description:
  *                   type: string
- *                 category_id:
- *                   type: integer
- *                 user_id:
- *                   type: integer
  *                 period:
+ *                   type: string
+ *                 category:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
  *       404:
  *         description: Entrada não encontrada
  *       500:
@@ -208,7 +231,7 @@ router.get("/entries/:id", authenticateToken, getEntryController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da entrada
  *     requestBody:
@@ -223,11 +246,12 @@ router.get("/entries/:id", authenticateToken, getEntryController);
  *               description:
  *                 type: string
  *               category_id:
- *                 type: integer
+ *                 type: string
  *               period:
  *                 type: string
+ *                 description: Formato YYYY-MM
  *               payment_type_id:
- *                 type: integer
+ *                 type: string
  *             required:
  *               - amount
  *               - category_id
@@ -241,20 +265,29 @@ router.get("/entries/:id", authenticateToken, getEntryController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 amount:
  *                   type: number
  *                 description:
  *                   type: string
- *                 category_id:
- *                   type: integer
- *                 user_id:
- *                   type: integer
  *                 period:
- *                 payment_type_id:
- *                   type: integer
- *       400:
- *         description: Erro de validação
+ *                   type: string
+ *                 category:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
  *       404:
  *         description: Entrada não encontrada
  *       500:
@@ -272,7 +305,7 @@ router.put("/entries/:id", authenticateToken, updateEntryController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da entrada
  *     responses:

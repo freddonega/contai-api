@@ -28,7 +28,7 @@ export const authenticateToken = (
       res.status(401).json({ message: "Failed to authenticate token" });
       return;
     }
-    req.user = user as { id: number; email: string; name: string };
+    req.user = user as { id: string; email: string; name: string };
     next();
   });
 };

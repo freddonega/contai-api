@@ -11,14 +11,9 @@ import {
 const entrySchema = z.object({
   amount: z.number(),
   description: z.string().nullable().optional(),
-  category_id: z.number(),
-  period: z
-    .string()
-    .regex(
-      /^\d{4}-(0[1-9]|1[0-2])$/,
-      "Formato de período inválido, deve ser YYYY-MM"
-    ),
-  payment_type_id: z.number().optional(),
+  category_id: z.string(),
+  period: z.string(),
+  payment_type_id: z.string().nullable().optional(),
 });
 
 const listEntriesSchema = z.object({
@@ -49,9 +44,9 @@ export const createEntryController = async (req: Request, res: Response) => {
 
     const entry = await createEntry({
       ...entryData,
-      user_id,
       description: entryData.description ?? null,
       payment_type_id: entryData.payment_type_id ?? null,
+      user_id,
     });
     res.json(entry);
   } catch (error) {
@@ -94,9 +89,9 @@ export const listEntriesController = async (req: Request, res: Response) => {
         (item): item is "asc" | "desc" => !!item
       ),
       user_id,
-      category_id: Number(queryData.category_id),
+      category_id: queryData.category_id,
       category_type: queryData.category_type,
-      payment_type_id: Number(queryData.payment_type_id),
+      payment_type_id: queryData.payment_type_id,
       from: queryData.from,
       to: queryData.to,
     });
@@ -124,7 +119,7 @@ export const getEntryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const entry = await getEntry(parseInt(id));
+    const entry = await getEntry(id);
 
     if (!entry || entry.user_id !== user_id) {
       res.status(404).json({ error: "Entrada não encontrada" });
@@ -141,14 +136,14 @@ export const updateEntryController = async (req: Request, res: Response) => {
     const { id } = req.params;
     const user_id = req.user?.id;
     const entryData = entrySchema.parse(req.body);
-    const entry = await getEntry(parseInt(id));
+    const entry = await getEntry(id);
 
     if (!entry || entry.user_id !== user_id) {
       res.status(404).json({ error: "Entrada não encontrada" });
       return;
     }
 
-    const updatedEntry = await updateEntry(parseInt(id), entryData);
+    const updatedEntry = await updateEntry(id, entryData);
     res.json(updatedEntry);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -163,14 +158,14 @@ export const deleteEntryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const entry = await getEntry(parseInt(id));
+    const entry = await getEntry(id);
 
     if (!entry || entry.user_id !== user_id) {
       res.status(404).json({ error: "Entrada não encontrada" });
       return;
     }
 
-    await deleteEntry(parseInt(id));
+    await deleteEntry(id);
     res.json({ message: "Entrada deletada" });
   } catch (error) {
     res.status(500).json({ error: "Erro Interno do Servidor" });

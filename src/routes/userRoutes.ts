@@ -31,11 +31,11 @@ const router = Router();
  *               password:
  *                 type: string
  *               name:
- *                 type: string // New field
+ *                 type: string
  *             required:
  *               - email
  *               - password
- *               - name // New field
+ *               - name
  *     responses:
  *       200:
  *         description: Usuário criado com sucesso
@@ -45,11 +45,11 @@ const router = Router();
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 email:
  *                   type: string
  *                 name:
- *                   type: string // New field
+ *                   type: string
  *       400:
  *         description: Erro de validação
  */
@@ -59,7 +59,7 @@ router.post("/users", createUserController);
  * @swagger
  * /login:
  *   post:
- *     summary: Faz login de um usuário
+ *     summary: Realiza login do usuário
  *     tags: [Users]
  *     requestBody:
  *       required: true
@@ -77,7 +77,7 @@ router.post("/users", createUserController);
  *               - password
  *     responses:
  *       200:
- *         description: Login bem-sucedido
+ *         description: Login realizado com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -89,13 +89,11 @@ router.post("/users", createUserController);
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: integer
- *                     name:
  *                       type: string
  *                     email:
  *                       type: string
- *       400:
- *         description: Erro de validação
+ *                     name:
+ *                       type: string
  *       401:
  *         description: Credenciais inválidas
  */

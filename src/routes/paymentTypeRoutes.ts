@@ -43,11 +43,13 @@ const router = Router();
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
  *       400:
  *         description: Erro de validação
+ *       500:
+ *         description: Erro Interno do Servidor
  */
 router.post("/payment_types", authenticateToken, createPaymentTypeController);
 
@@ -55,7 +57,7 @@ router.post("/payment_types", authenticateToken, createPaymentTypeController);
  * @swagger
  * /payment_types:
  *   get:
- *     summary: Lista tipos de pagamento
+ *     summary: Lista todos os tipos de pagamento do usuário
  *     tags: [PaymentTypes]
  *     responses:
  *       200:
@@ -68,9 +70,11 @@ router.post("/payment_types", authenticateToken, createPaymentTypeController);
  *                 type: object
  *                 properties:
  *                   id:
- *                     type: integer
+ *                     type: string
  *                   name:
  *                     type: string
+ *       400:
+ *         description: Erro de validação
  *       500:
  *         description: Erro Interno do Servidor
  */
@@ -86,7 +90,7 @@ router.get("/payment_types", authenticateToken, listPaymentTypesController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do tipo de pagamento
  *     responses:
@@ -98,7 +102,7 @@ router.get("/payment_types", authenticateToken, listPaymentTypesController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
  *       404:
@@ -118,7 +122,7 @@ router.get("/payment_types/:id", authenticateToken, getPaymentTypeController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do tipo de pagamento
  *     requestBody:
@@ -141,11 +145,9 @@ router.get("/payment_types/:id", authenticateToken, getPaymentTypeController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
- *       400:
- *         description: Erro de validação
  *       404:
  *         description: Tipo de pagamento não encontrado
  *       500:
@@ -167,7 +169,7 @@ router.put(
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do tipo de pagamento
  *     responses:

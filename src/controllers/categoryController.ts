@@ -11,9 +11,7 @@ import { CategoryException } from "../exceptions/CategoryException";
 
 const categorySchema = z.object({
   name: z.string(),
-  type: z.string().refine((val) => val === "income" || val === "expense", {
-    message: "O tipo deve ser 'income' ou 'expense'",
-  }),
+  type: z.enum(["income", "expense"]),
 });
 
 const listCategoriesSchema = z.object({
@@ -24,7 +22,7 @@ const listCategoriesSchema = z.object({
     z.number().min(1).default(10)
   ),
   sort_by: z.union([z.string(), z.array(z.string())]).optional(),
-  sort_order: z.enum(["asc", "desc"]).optional(),
+  sort_order: z.union([z.enum(["asc", "desc"]), z.array(z.enum(["asc", "desc"]))]).optional(),
 });
 
 export const createCategoryController = async (req: Request, res: Response) => {
@@ -37,9 +35,13 @@ export const createCategoryController = async (req: Request, res: Response) => {
       return;
     }
 
-    const category = await createCategory({ ...categoryData, user_id });
+    const category = await createCategory({
+      ...categoryData,
+      user_id,
+    });
     res.json(category);
   } catch (error) {
+    console.log(error);
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else if (error instanceof CategoryException) {
@@ -52,29 +54,27 @@ export const createCategoryController = async (req: Request, res: Response) => {
 
 export const listCategoriesController = async (req: Request, res: Response) => {
   try {
-    const queryData = listCategoriesSchema.parse(req.query);
     const user_id = req.user?.id;
+    const type = req.query.type as string | undefined;
+    const queryData = listCategoriesSchema.parse(req.query);
 
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
 
-    if (typeof queryData.sort_by === "string") {
-      queryData.sort_by = [queryData.sort_by];
-    }
-
-    const categories = await listCategories({
-      ...queryData,
+    const result = await listCategories({
       user_id,
-      sort_by: Array.isArray(queryData.sort_by)
-        ? queryData.sort_by
-        : queryData.sort_by
-        ? [queryData.sort_by]
-        : undefined,
+      type,
+      page: queryData.page,
+      items_per_page: queryData.items_per_page,
+      sort_by: Array.isArray(queryData.sort_by) ? queryData.sort_by : queryData.sort_by ? [queryData.sort_by] : undefined,
+      sort_order: Array.isArray(queryData.sort_order) ? queryData.sort_order : queryData.sort_order ? [queryData.sort_order] : undefined,
     });
-    res.json(categories);
+
+    res.json(result);
   } catch (error) {
+    console.log(error);
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
@@ -87,7 +87,7 @@ export const getCategoryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const category = await getCategory(Number(id));
+    const category = await getCategory(id);
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
@@ -102,16 +102,16 @@ export const getCategoryController = async (req: Request, res: Response) => {
 export const updateCategoryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const user_id = req.user?.id;
     const categoryData = categorySchema.parse(req.body);
-    const category = await getCategory(Number(id));
+    const user_id = req.user?.id;
+    const category = await getCategory(id);
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
       return;
     }
 
-    const updatedCategory = await updateCategory(Number(id), categoryData);
+    const updatedCategory = await updateCategory(id, categoryData);
     res.json(updatedCategory);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -126,14 +126,14 @@ export const deleteCategoryController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user_id = req.user?.id;
-    const category = await getCategory(Number(id));
+    const category = await getCategory(id);
 
     if (!category || category.user_id !== user_id) {
       res.status(404).json({ error: "Categoria não encontrada" });
       return;
     }
 
-    await deleteCategory(Number(id));
+    await deleteCategory(id);
     res.json({ message: "Categoria deletada" });
   } catch (error) {
     if (error instanceof CategoryException) {

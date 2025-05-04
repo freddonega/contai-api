@@ -3,26 +3,30 @@ import { PrismaClient, PaymentType } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const createPaymentType = async (
-  data: Omit<PaymentType, "id" | "created_at" | "updated_at"> & {
-    user_id: number;
-  }
+  data: Omit<PaymentType, "id" | "created_at" | "updated_at">
 ): Promise<PaymentType> => {
   return prisma.paymentType.create({
     data,
   });
 };
 
-export const listPaymentTypes = async (
-  user_id: number
-): Promise<PaymentType[]> => {
-  return prisma.paymentType.findMany({
+interface ListPaymentTypesParams {
+  user_id: string;
+}
+
+export const listPaymentTypes = async ({
+  user_id,
+}: ListPaymentTypesParams) => {
+  const payment_types = await prisma.paymentType.findMany({
     where: { user_id },
   });
+
+  return payment_types;
 };
 
 export const getPaymentType = async (
-  id: number,
-  user_id: number
+  id: string,
+  user_id: string
 ): Promise<PaymentType | null> => {
   return prisma.paymentType.findFirst({
     where: { id, user_id },
@@ -30,8 +34,8 @@ export const getPaymentType = async (
 };
 
 export const updatePaymentType = async (
-  id: number,
-  data: Partial<PaymentType> & { user_id: number }
+  id: string,
+  data: Partial<PaymentType> & { user_id: string }
 ): Promise<PaymentType> => {
   const paymentType = await prisma.paymentType.findFirst({
     where: { id, user_id: data.user_id },
@@ -50,8 +54,8 @@ export const updatePaymentType = async (
 };
 
 export const deletePaymentType = async (
-  id: number,
-  user_id: number
+  id: string,
+  user_id: string
 ): Promise<void> => {
   const paymentType = await prisma.paymentType.findFirst({
     where: { id, user_id },

@@ -1,14 +1,16 @@
 datasource db {
-  provider = "postgresql" // Replace with your actual provider
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto]
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 model User {
-  id               Int              @id @default(autoincrement())
+  id               String           @id @default(dbgenerated("gen_random_uuid()"))
   email            String           @unique
   password         String
   name             String // New field
@@ -21,9 +23,9 @@ model User {
 }
 
 model Category {
-  id               Int              @id @default(autoincrement())
+  id               String           @id @default(dbgenerated("gen_random_uuid()"))
   name             String
-  user_id          Int
+  user_id          String
   type             String
   user             User             @relation(fields: [user_id], references: [id])
   entries          Entry[]
@@ -35,13 +37,13 @@ model Category {
 }
 
 model Entry {
-  id              Int          @id @default(autoincrement())
+  id              String       @id @default(dbgenerated("gen_random_uuid()"))
   amount          Float
   description     String?
-  category_id     Int
-  user_id         Int
+  category_id     String
+  user_id         String
   period          String
-  payment_type_id Int?
+  payment_type_id String?
   user            User         @relation(fields: [user_id], references: [id])
   category        Category     @relation(fields: [category_id], references: [id])
   payment_type    PaymentType? @relation(fields: [payment_type_id], references: [id])
@@ -50,10 +52,10 @@ model Entry {
 }
 
 model RecurringEntry {
-  id              Int      @id @default(autoincrement())
-  user_id         Int
-  category_id     Int
-  payment_type_id Int?
+  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  user_id         String
+  category_id     String
+  payment_type_id String?
   amount          Float
   description     String?
   frequency       String // "monthly", "weekly", "yearly"
@@ -67,9 +69,9 @@ model RecurringEntry {
 }
 
 model PaymentType {
-  id               Int              @id @default(autoincrement())
+  id               String           @id @default(dbgenerated("gen_random_uuid()"))
   name             String
-  user_id          Int
+  user_id          String
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
   entries          Entry[]

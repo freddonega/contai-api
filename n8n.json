@@ -1,0 +1,483 @@
+{
+    "name": "Contai API Test Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/users",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\",\n  \"name\": \"Test User\"\n}",
+                "options": {}
+            },
+            "name": "Create User",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/login",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\"\n}",
+                "options": {}
+            },
+            "name": "Login",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/category",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"name\": \"Test Category\",\n  \"type\": \"expense\"\n}",
+                "options": {}
+            },
+            "name": "Create Category",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/category",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "List Categories",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/payment_types",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"name\": \"Credit Card\"\n}",
+                "options": {}
+            },
+            "name": "Create Payment Type",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1050,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/payment_types",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "List Payment Types",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/entries",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"amount\": 100.50,\n  \"description\": \"Test Entry\",\n  \"category_id\": {{ $('Create Category').item.json.id }},\n  \"period\": \"2024-03\",\n  \"payment_type_id\": {{ $('Create Payment Type').item.json.id }}\n}",
+                "options": {}
+            },
+            "name": "Create Entry",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/entries",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "List Entries",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.API_URL }}/recurring_entry",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"amount\": 200.00,\n  \"description\": \"Monthly Subscription\",\n  \"frequency\": \"monthly\",\n  \"category_id\": {{ $('Create Category').item.json.id }},\n  \"next_run\": \"2024-04-01\"\n}",
+                "options": {}
+            },
+            "name": "Create Recurring Entry",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/recurring_entry",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "List Recurring Entries",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2050,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/dashboard/2024",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Get Dashboard",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/dashboard/2024/3/totals",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Get Monthly Totals",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/dashboard/month/current/ratio",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Get Income Expense Ratio",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.API_URL }}/dashboard/balance/total",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $('Login').item.json.token }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Get Total Balance",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2850,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Create User": {
+            "main": [
+                [
+                    {
+                        "node": "Login",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Login": {
+            "main": [
+                [
+                    {
+                        "node": "Create Category",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Category": {
+            "main": [
+                [
+                    {
+                        "node": "List Categories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "List Categories": {
+            "main": [
+                [
+                    {
+                        "node": "Create Payment Type",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Payment Type": {
+            "main": [
+                [
+                    {
+                        "node": "List Payment Types",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "List Payment Types": {
+            "main": [
+                [
+                    {
+                        "node": "Create Entry",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Entry": {
+            "main": [
+                [
+                    {
+                        "node": "List Entries",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "List Entries": {
+            "main": [
+                [
+                    {
+                        "node": "Create Recurring Entry",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Recurring Entry": {
+            "main": [
+                [
+                    {
+                        "node": "List Recurring Entries",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "List Recurring Entries": {
+            "main": [
+                [
+                    {
+                        "node": "Get Dashboard",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Dashboard": {
+            "main": [
+                [
+                    {
+                        "node": "Get Monthly Totals",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Monthly Totals": {
+            "main": [
+                [
+                    {
+                        "node": "Get Income Expense Ratio",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Income Expense Ratio": {
+            "main": [
+                [
+                    {
+                        "node": "Get Total Balance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "pinData": {},
+    "versionId": "",
+    "id": "1",
+    "meta": {
+        "instanceId": "1"
+    },
+    "tags": []
+}

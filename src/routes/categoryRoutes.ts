@@ -47,13 +47,15 @@ const router = Router();
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
  *                 type:
  *                   type: string
  *       400:
  *         description: Erro de validação
+ *       500:
+ *         description: Erro Interno do Servidor
  */
 router.post("/category", authenticateToken, createCategoryController);
 
@@ -61,72 +63,31 @@ router.post("/category", authenticateToken, createCategoryController);
  * @swagger
  * /category:
  *   get:
- *     summary: Lista categorias com busca, paginação e itens por página
+ *     summary: Lista todas as categorias do usuário
  *     tags: [Categories]
  *     parameters:
  *       - in: query
- *         name: search
+ *         name: type
  *         schema:
  *           type: string
- *         description: Termo de busca para o nome da categoria
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Número da página
- *       - in: query
- *         name: itemsPerPage
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Número de itens por página
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: [string, array]
- *         description: Campo de ordenação
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: array
- *           items:
- *             type: string
- *             enum: [asc, desc]
- *         description: Ordem de ordenação (asc ou desc)
+ *           enum: [income, expense]
+ *         description: Filtrar por tipo de categoria
  *     responses:
  *       200:
  *         description: Lista de categorias
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 categories:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       name:
- *                         type: string
- *                       type:
- *                         type: string
- *                 total:
- *                   type: integer
- *                 page:
- *                   type: integer
- *                 itemsPerPage:
- *                   type: integer
- *                 sortBy:
- *                   type: [string, array]
- *                   description: Campo de ordenação
- *                 sortOrder:
- *                   type: string
- *                   description: Ordem de ordenação (asc ou desc)
- *       400:
- *         description: Erro de validação
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
  *       500:
  *         description: Erro Interno do Servidor
  */
@@ -142,7 +103,7 @@ router.get("/category", authenticateToken, listCategoriesController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da categoria
  *     responses:
@@ -154,7 +115,7 @@ router.get("/category", authenticateToken, listCategoriesController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
  *                 type:
@@ -176,7 +137,7 @@ router.get("/category/:id", authenticateToken, getCategoryController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da categoria
  *     requestBody:
@@ -203,13 +164,11 @@ router.get("/category/:id", authenticateToken, getCategoryController);
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 name:
  *                   type: string
  *                 type:
  *                   type: string
- *       400:
- *         description: Erro de validação
  *       404:
  *         description: Categoria não encontrada
  *       500:
@@ -227,7 +186,7 @@ router.put("/category/:id", authenticateToken, updateCategoryController);
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID da categoria
  *     responses:

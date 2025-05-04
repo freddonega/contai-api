@@ -3,6 +3,20 @@ import { PrismaPromise } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
+interface ListEntriesParams {
+  search?: string;
+  page?: number;
+  items_per_page: number;
+  sort_by?: string[];
+  sort_order?: Array<"asc" | "desc">;
+  user_id: string;
+  category_id?: string;
+  category_type?: string;
+  payment_type_id?: string;
+  from?: string;
+  to?: string;
+}
+
 export const createEntry = async (
   data: Omit<Entry, "id" | "created_at" | "updated_at">
 ): Promise<Omit<Entry, "user_id" | "category_id" | "payment_type_id">> => {
@@ -44,19 +58,7 @@ export const listEntries = async ({
   payment_type_id,
   from,
   to,
-}: {
-  search?: string;
-  page?: number;
-  items_per_page: number;
-  sort_by?: string[];
-  sort_order?: Array<"asc" | "desc">;
-  user_id: number;
-  category_id?: number;
-  category_type?: string;
-  payment_type_id?: number;
-  from?: string;
-  to?: string;
-}) => {
+}: ListEntriesParams) => {
   const where = {
     user_id,
     ...(search && {
@@ -155,8 +157,8 @@ export const listEntries = async ({
     expenseResult,
   ]);
 
-  const income = incomeResultData?._sum.amount || 0;
-  const expense = expenseResultData?._sum.amount || 0;
+  const income = incomeResultData?._sum?.amount ?? 0;
+  const expense = expenseResultData?._sum?.amount ?? 0;
   const total_amount = income - expense; // Income - Expense
 
   return {
@@ -170,7 +172,7 @@ export const listEntries = async ({
   };
 };
 
-export const getEntry = async (id: number): Promise<Entry | null> => {
+export const getEntry = async (id: string): Promise<Entry | null> => {
   return prisma.entry.findUnique({
     where: { id },
     include: {
@@ -192,7 +194,7 @@ export const getEntry = async (id: number): Promise<Entry | null> => {
 };
 
 export const updateEntry = async (
-  id: number,
+  id: string,
   data: Partial<Entry>
 ): Promise<Entry> => {
   return prisma.entry.update({
@@ -201,16 +203,16 @@ export const updateEntry = async (
   });
 };
 
-export const deleteEntry = async (id: number): Promise<void> => {
+export const deleteEntry = async (id: string): Promise<void> => {
   await prisma.entry.delete({
     where: { id },
   });
 };
 
-export async function getEntriesByYear(year: number, user_id: number) {
+export async function getEntriesByYear(year: number, user_id: string) {
   return await prisma.entry.findMany({
     where: {
-      user_id: user_id,
+      user_id,
       period: {
         startsWith: `${year}-`,
       },
@@ -221,320 +223,347 @@ export async function getEntriesByYear(year: number, user_id: number) {
   });
 }
 
-export async function getBalanceByYear(year: number, user_id: number) {
-  const entries = await getEntriesByYear(year, user_id);
+export const getBalanceByYear = async (
+  year: number,
+  user_id: string
+): Promise<{
+  income: number;
+  expense: number;
+  balance: number;
+  monthlyData: {
+    month: number;
+    income: number;
+    expense: number;
+    balance: number;
+  }[];
+}> => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  const result = Array.from({ length: 12 }, (_, month) => ({
-    month: `${year}-${String(month + 1).padStart(2, "0")}`,
-    income: Number(
-      entries
-        .filter(
-          (entry) =>
-            entry.category.type === "income" &&
-            new Date(`${entry.period}-02`).getMonth() === month
-        )
-        .reduce((sum, entry) => sum + entry.amount, 0)
-        .toFixed(2)
-    ),
-    expense: Number(
-      entries
-        .filter(
-          (entry) =>
-            entry.category.type === "expense" &&
-            new Date(`${entry.period}-02`).getMonth() === month
-        )
-        .reduce((sum, entry) => sum + entry.amount, 0)
-        .toFixed(2)
-    ),
+  const entries = await prisma.entry.findMany({
+    where: {
+      user_id,
+      created_at: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    include: {
+      category: true,
+    },
+  });
+
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    income: 0,
+    expense: 0,
+    balance: 0,
   }));
 
-  return result;
-}
+  let totalIncome = 0;
+  let totalExpense = 0;
 
-export async function getTotalsByCategoryForMonth(
+  entries.forEach((entry) => {
+    const month = entry.created_at.getMonth();
+    const amount = entry.amount;
+
+    if (entry.category.type === "income") {
+      monthlyData[month].income += amount;
+      totalIncome += amount;
+    } else {
+      monthlyData[month].expense += amount;
+      totalExpense += amount;
+    }
+
+    monthlyData[month].balance =
+      monthlyData[month].income - monthlyData[month].expense;
+  });
+
+  return {
+    income: totalIncome,
+    expense: totalExpense,
+    balance: totalIncome - totalExpense,
+    monthlyData,
+  };
+};
+
+export const getTotalsByCategoryForMonth = async (
   year: number,
   month: number,
-  user_id: number
-) {
-  const entries = await prisma.entry.groupBy({
-    by: ["category_id"], // Agrupar por categoria
+  user_id: string
+): Promise<
+  {
+    category_id: string;
+    category_name: string;
+    category_type: string;
+    total: number;
+  }[]
+> => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+
+  const entries = await prisma.entry.findMany({
     where: {
-      user_id: user_id,
-      period: `${year}-${String(month).padStart(2, "0")}`,
-    },
-    _sum: {
-      amount: true, // Somar os valores de 'amount'
-    },
-  });
-
-  // Extrair os IDs das categorias que possuem entradas
-  const categoryIds = entries.map((entry) => entry.category_id);
-
-  // Segunda consulta: buscar os detalhes das categorias (name e type)
-  const categories = await prisma.category.findMany({
-    where: {
-      id: { in: categoryIds },
-      user_id: user_id,
-    },
-  });
-
-  // Combinar os resultados de entries e categorias
-  const result = entries.map((entry) => {
-    const category = categories.find((cat) => cat.id === entry.category_id);
-    return {
-      category_id: entry.category_id,
-      category_name: category?.name,
-      type: category?.type,
-      total: entry._sum.amount,
-    };
-  });
-
-  return result;
-}
-
-export async function getMonthlyBalance(
-  year: number,
-  month: number,
-  user_id: number
-) {
-  const currentMonthEntries = await prisma.entry.findMany({
-    where: {
-      user_id: user_id,
-      period: `${year}-${String(month).padStart(2, "0")}`,
+      user_id,
+      created_at: {
+        gte: startDate,
+        lte: endDate,
+      },
     },
     include: {
       category: true,
     },
   });
 
-  const previousMonth = month === 1 ? 12 : month - 1;
-  const previousYear = month === 1 ? year - 1 : year;
+  const categoryTotals = new Map<
+    string,
+    {
+      category_name: string;
+      category_type: string;
+      total: number;
+    }
+  >();
 
-  const previousMonthEntries = await prisma.entry.findMany({
-    where: {
-      user_id: user_id,
-      period: `${previousYear}-${String(previousMonth).padStart(2, "0")}`,
-    },
-    include: {
-      category: true,
-    },
+  entries.forEach((entry) => {
+    const categoryId = entry.category_id;
+    const currentTotal = categoryTotals.get(categoryId);
+
+    if (currentTotal) {
+      currentTotal.total += entry.amount;
+    } else {
+      categoryTotals.set(categoryId, {
+        category_name: entry.category.name,
+        category_type: entry.category.type,
+        total: entry.amount,
+      });
+    }
   });
 
-  const calculateBalance = (
-    entries: (Entry & { category: { type: string } })[]
-  ) =>
-    entries.reduce(
-      (balance, entry) =>
-        entry.category.type === "income"
-          ? balance + entry.amount
-          : balance - entry.amount,
-      0
-    );
+  return Array.from(categoryTotals.entries()).map(([category_id, data]) => ({
+    category_id,
+    ...data,
+  }));
+};
+
+export const getMonthlyBalance = async (
+  year: number,
+  month: number,
+  user_id: string
+): Promise<{
+  currentMonthBalance: number;
+  previousMonthBalance: number;
+  percentageChange: number;
+}> => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  const previousStartDate = new Date(year, month - 2, 1);
+  const previousEndDate = new Date(year, month - 1, 0, 23, 59, 59);
+
+  const [currentMonthEntries, previousMonthEntries] = await Promise.all([
+    prisma.entry.findMany({
+      where: {
+        user_id,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+    }),
+    prisma.entry.findMany({
+      where: {
+        user_id,
+        created_at: {
+          gte: previousStartDate,
+          lte: previousEndDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+    }),
+  ]);
+
+  const calculateBalance = (entries: typeof currentMonthEntries) => {
+    return entries.reduce((acc, entry) => {
+      return (
+        acc +
+        (entry.category.type === "income" ? entry.amount : -entry.amount)
+      );
+    }, 0);
+  };
 
   const currentMonthBalance = calculateBalance(currentMonthEntries);
   const previousMonthBalance = calculateBalance(previousMonthEntries);
 
   const percentageChange =
     previousMonthBalance === 0
-      ? 0
-      : Number(
-          (
-            ((currentMonthBalance - previousMonthBalance) /
-              Math.abs(previousMonthBalance)) *
-            100
-          ).toFixed(2)
-        );
+      ? 100
+      : ((currentMonthBalance - previousMonthBalance) /
+          Math.abs(previousMonthBalance)) *
+        100;
 
   return {
     currentMonthBalance,
     previousMonthBalance,
     percentageChange,
   };
-}
+};
 
-export async function getHighestCategoryForMonth(
+export const getCategoryComparison = async (
   year: number,
   month: number,
-  user_id: number
-) {
-  const period = `${year}-${String(month).padStart(2, "0")}`;
+  user_id: string
+): Promise<
+  {
+    category_name: string;
+    current_month: number;
+    previous_month: number;
+    percentage_change: number;
+  }[]
+> => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  const previousStartDate = new Date(year, month - 2, 1);
+  const previousEndDate = new Date(year, month - 1, 0, 23, 59, 59);
 
-  const categoryTotals = await prisma.entry.groupBy({
-    by: ["category_id"],
-    where: { user_id, period },
-    _sum: { amount: true },
+  const [currentMonthEntries, previousMonthEntries] = await Promise.all([
+    prisma.entry.findMany({
+      where: {
+        user_id,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+    }),
+    prisma.entry.findMany({
+      where: {
+        user_id,
+        created_at: {
+          gte: previousStartDate,
+          lte: previousEndDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+    }),
+  ]);
+
+  const categoryTotals = new Map<
+    string,
+    {
+      category_name: string;
+      current_month: number;
+      previous_month: number;
+    }
+  >();
+
+  currentMonthEntries.forEach((entry) => {
+    const categoryName = entry.category.name;
+    const current = categoryTotals.get(categoryName);
+
+    if (current) {
+      current.current_month += entry.amount;
+    } else {
+      categoryTotals.set(categoryName, {
+        category_name: categoryName,
+        current_month: entry.amount,
+        previous_month: 0,
+      });
+    }
   });
 
-  const categories = await prisma.category.findMany({
-    where: { user_id },
+  previousMonthEntries.forEach((entry) => {
+    const categoryName = entry.category.name;
+    const current = categoryTotals.get(categoryName);
+
+    if (current) {
+      current.previous_month += entry.amount;
+    } else {
+      categoryTotals.set(categoryName, {
+        category_name: categoryName,
+        current_month: 0,
+        previous_month: entry.amount,
+      });
+    }
   });
 
-  // Encontrar a categoria com maior soma para income e expense
-  const highestIncome = categoryTotals
-    .map((entry) => ({
-      ...entry,
-      category: categories.find((cat) => cat.id === entry.category_id),
-    }))
-    .filter((entry) => entry.category?.type === "income")
-    .reduce(
-      (max, entry) =>
-        entry._sum.amount !== null &&
-        entry.category &&
-        entry._sum.amount > max.amount
-          ? { category: entry.category.name, amount: entry._sum.amount }
-          : max,
-      { category: "", amount: 0 }
-    );
-
-  const highestExpense = categoryTotals
-    .map((entry) => ({
-      ...entry,
-      category: categories.find((cat) => cat.id === entry.category_id),
-    }))
-    .filter((entry) => entry.category?.type === "expense")
-    .reduce(
-      (max, entry) =>
-        (entry._sum.amount ?? 0) > max.amount
-          ? {
-              category: entry.category?.name ?? "",
-              amount: entry._sum.amount ?? 0,
-            }
-          : max,
-      { category: "", amount: 0 }
-    );
-
-  return { highestIncome, highestExpense };
-}
-
-export async function getCategoryComparison(
-  year: number,
-  month: number,
-  user_id: number
-) {
-  const currentMonthData = await getHighestCategoryForMonth(
-    year,
-    month,
-    user_id
-  );
-
-  const previousMonth = month === 1 ? 12 : month - 1;
-  const previousYear = month === 1 ? year - 1 : year;
-
-  const previousMonthData = await getHighestCategoryForMonth(
-    previousYear,
-    previousMonth,
-    user_id
-  );
-
-  // Calcula a variação percentual, evitando divisão por zero
-  const calculateChange = (current: number, previous: number) =>
-    previous === 0
-      ? current > 0
+  return Array.from(categoryTotals.values()).map((data) => ({
+    ...data,
+    percentage_change:
+      data.previous_month === 0
         ? 100
-        : 0
-      : ((current - previous) / previous) * 100;
+        : ((data.current_month - data.previous_month) /
+            Math.abs(data.previous_month)) *
+          100,
+  }));
+};
 
-  return {
-    highestIncome: {
-      ...currentMonthData.highestIncome,
-      percentageChange: calculateChange(
-        currentMonthData.highestIncome.amount,
-        previousMonthData.highestIncome.amount
-      ),
-    },
-    highestExpense: {
-      ...currentMonthData.highestExpense,
-      percentageChange: calculateChange(
-        currentMonthData.highestExpense.amount,
-        previousMonthData.highestExpense.amount
-      ),
-    },
-  };
-}
-
-export async function getIncomeExpenseRatioForMonth(
+export const getIncomeExpenseRatioForMonth = async (
   year: number,
   month: number,
-  user_id: number
-): Promise<number> {
-  const period = `${year}-${String(month).padStart(2, "0")}`;
+  user_id: string
+): Promise<number> => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
 
-  // Faz o cálculo direto no banco, evitando processar em memória
-  const { _sum: incomeSum } = await prisma.entry.aggregate({
-    _sum: { amount: true },
+  const entries = await prisma.entry.findMany({
     where: {
       user_id,
-      period,
-      category: { type: "income" },
+      created_at: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    include: {
+      category: true,
     },
   });
 
-  const { _sum: expenseSum } = await prisma.entry.aggregate({
-    _sum: { amount: true },
-    where: {
-      user_id,
-      period,
-      category: { type: "expense" },
-    },
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  entries.forEach((entry) => {
+    if (entry.category.type === "income") {
+      totalIncome += entry.amount;
+    } else {
+      totalExpense += entry.amount;
+    }
   });
 
-  const income = incomeSum.amount ?? 0;
-  const expense = expenseSum.amount ?? 0;
+  return totalExpense === 0 ? totalIncome : totalIncome / totalExpense;
+};
 
-  return expense === 0 ? Infinity : income / expense;
-}
-
-export async function getSurvivalTime(user_id: number): Promise<number> {
-  // Calcula o saldo atual (soma de todas as receitas - soma de todas as despesas)
-  const { _sum: incomeSum } = await prisma.entry.aggregate({
-    _sum: { amount: true },
-    where: {
-      user_id,
-      category: { type: "income" },
+export const getSurvivalTime = async (user_id: string): Promise<number> => {
+  const totalExpensePerMonth = await prisma.entry.aggregate({
+    _avg: {
+      amount: true,
     },
-  });
-
-  const { _sum: expenseSum } = await prisma.entry.aggregate({
-    _sum: { amount: true },
     where: {
       user_id,
-      category: { type: "expense" },
-    },
-  });
-
-  const currentBalance = (incomeSum.amount ?? 0) - (expenseSum.amount ?? 0);
-
-  // Obtém os gastos dos últimos 12 meses para calcular a média mensal corretamente
-  const expensesByMonth = await prisma.entry.groupBy({
-    by: ["period"],
-    _sum: { amount: true },
-    where: {
-      user_id,
-      category: { type: "expense" },
-      period: {
-        gte: `${new Date().getFullYear() - 1}-${String(
-          new Date().getMonth() + 1
-        ).padStart(2, "0")}`, // Últimos 12 meses
+      category: {
+        type: "expense",
       },
     },
   });
 
-  // Calcula a média mensal de despesas apenas com os meses que tiveram gastos
-  const totalExpenses = expensesByMonth.reduce(
-    (sum, entry) => sum + (entry._sum.amount ?? 0),
-    0
-  );
+  const totalBalance = await getTotalBalance(user_id);
 
-  const monthsWithExpenses = expensesByMonth.length || 1; // Evita divisão por zero
-  const averageMonthlyExpenses = totalExpenses / monthsWithExpenses;
+  const averageExpensePerMonth = totalExpensePerMonth._avg?.amount ?? 0;
 
-  // Calcula o tempo de sobrevivência (meses)
-  return averageMonthlyExpenses === 0
+  return averageExpensePerMonth === 0
     ? Infinity
-    : currentBalance / averageMonthlyExpenses;
-}
+    : totalBalance / averageExpensePerMonth;
+};
 
-export const getTotalBalance = async (user_id: number): Promise<number> => {
+export const getTotalBalance = async (user_id: string): Promise<number> => {
   const income = await prisma.entry.aggregate({
     _sum: {
       amount: true,
@@ -559,37 +588,36 @@ export const getTotalBalance = async (user_id: number): Promise<number> => {
     },
   });
 
-  return (income._sum.amount || 0) - (expense._sum.amount || 0);
+  return (income._sum?.amount ?? 0) - (expense._sum?.amount ?? 0);
 };
 
-export async function getMonthlyTotalsByType(
-  user_id: number,
+export const getMonthlyTotalsByType = async (
+  user_id: string,
   year: number,
   month: number
-) {
-  const period = `${year}-${String(month).padStart(2, "0")}`;
+): Promise<Record<string, number>> => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
 
-  const entries = await prisma.entry.groupBy({
-    by: ["period", "payment_type_id"],
-    where: { user_id, period },
-    _sum: { amount: true },
+  const entries = await prisma.entry.findMany({
+    where: {
+      user_id,
+      created_at: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    include: {
+      payment_type: true,
+    },
   });
 
-  const paymentTypes = await prisma.paymentType.findMany();
+  const totals: Record<string, number> = {};
 
-  const totalsByType = entries.reduce((acc, entry) => {
-    const paymentType = paymentTypes.find(
-      (pt) => pt.id === entry.payment_type_id
-    );
-    if (paymentType) {
-      const payment_type_name = paymentType.name;
-      if (!acc[payment_type_name]) {
-        acc[payment_type_name] = 0;
-      }
-      acc[payment_type_name] += entry._sum.amount ?? 0;
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  entries.forEach((entry) => {
+    const paymentTypeName = entry.payment_type?.name || "Sem tipo de pagamento";
+    totals[paymentTypeName] = (totals[paymentTypeName] || 0) + entry.amount;
+  });
 
-  return totalsByType;
-}
+  return totals;
+};

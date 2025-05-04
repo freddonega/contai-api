@@ -11,12 +11,11 @@ import {
 import { getCategory } from "../repositories/categoryRepository";
 
 const recurringEntrySchema = z.object({
-  user_id: z.number(),
   amount: z.number(),
-  description: z.string(),
+  description: z.string().optional(),
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
-  category_id: z.number(),
-  payment_type_id: z.number().nullable().default(null),
+  category_id: z.string(),
+  payment_type_id: z.string().optional(),
   next_run: z.string().transform((str) => new Date(str)),
 });
 
@@ -36,34 +35,21 @@ export const createRecurringEntryController = async (
   res: Response
 ) => {
   try {
+    const recurringEntryData = recurringEntrySchema.parse(req.body);
     const user_id = req.user?.id;
+
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
 
-    const entryData = recurringEntrySchema.parse({
-      ...req.body,
+    const recurringEntry = await createRecurringEntry({
+      ...recurringEntryData,
+      description: recurringEntryData.description ?? null,
+      payment_type_id: recurringEntryData.payment_type_id ?? null,
       user_id,
     });
-
-    // Verificar se a categoria é do tipo "expense" e se payment_type_id está presente
-    const category = await getCategory(
-      entryData.category_id ? entryData.category_id : 0
-    );
-
-    if (category?.type === "expense" && !entryData.payment_type_id) {
-      res
-        .status(400)
-        .json({
-          error:
-            "payment_type_id é obrigatório para categorias do tipo expense",
-        });
-      return;
-    }
-
-    const entry = await createRecurringEntry(entryData);
-    res.json(entry);
+    res.json(recurringEntry);
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
@@ -78,30 +64,25 @@ export const listRecurringEntriesController = async (
   res: Response
 ) => {
   try {
-    let queryData = listRecurringEntriesSchema.parse(req.query);
-    if (queryData.sort_by && !Array.isArray(queryData.sort_by)) {
-      queryData = { ...queryData, sort_by: [queryData.sort_by] };
-    }
-    if (queryData.sort_order && !Array.isArray(queryData.sort_order)) {
-      queryData = { ...queryData, sort_order: [queryData.sort_order] };
-    }
     const user_id = req.user?.id;
+    const queryData = listRecurringEntriesSchema.parse(req.query);
 
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
-    const entries = await listRecurringEntries({
-      ...queryData,
-      sort_by: queryData.sort_by?.filter((item): item is string => !!item),
-      sort_order: queryData.sort_order?.filter(
-        (item): item is "asc" | "desc" => !!item
-      ),
+
+    const result = await listRecurringEntries({
       user_id,
+      page: queryData.page,
+      items_per_page: queryData.items_per_page,
+      sort_by: Array.isArray(queryData.sort_by) ? queryData.sort_by : queryData.sort_by ? [queryData.sort_by] : undefined,
+      sort_order: Array.isArray(queryData.sort_order) ? queryData.sort_order : queryData.sort_order ? [queryData.sort_order] : undefined,
     });
 
-    res.json(entries);
+    res.json(result);
   } catch (error) {
+    console.log(error);
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
     } else {
@@ -115,7 +96,7 @@ export const getRecurringEntryController = async (
   res: Response
 ) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const user_id = req.user?.id;
     const entry = await getRecurringEntry(id);
     if (!entry) {
@@ -138,38 +119,18 @@ export const updateRecurringEntryController = async (
   res: Response
 ) => {
   try {
+    const { id } = req.params;
+    const recurringEntryData = recurringEntrySchema.parse(req.body);
     const user_id = req.user?.id;
-    const id = Number(req.params.id);
-
     const entry = await getRecurringEntry(id);
+
     if (!entry || entry.user.id !== user_id) {
       res.status(404).json({ error: "Entrada recorrente não encontrada" });
       return;
     }
 
-    const entryData = recurringEntrySchema.partial().parse(req.body);
-
-    // Verificar se a categoria é do tipo "expense" e se payment_type_id está presente
-    const category = await getCategory(
-      entryData.category_id ? entryData.category_id : 0
-    );
-
-    if (
-      category?.type === "expense" &&
-      !entryData.payment_type_id &&
-      !entry?.payment_type.id
-    ) {
-      res
-        .status(400)
-        .json({
-          error:
-            "payment_type_id é obrigatório para categorias do tipo expense",
-        });
-      return;
-    }
-
-    const updateEntry = await updateRecurringEntry(id, entryData);
-    res.json(updateEntry);
+    const updatedEntry = await updateRecurringEntry(id, recurringEntryData);
+    res.json(updatedEntry);
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
@@ -184,7 +145,7 @@ export const deleteRecurringEntryController = async (
   res: Response
 ) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const user_id = req.user?.id;
     const entry = await getRecurringEntry(id);
 
@@ -194,7 +155,7 @@ export const deleteRecurringEntryController = async (
     }
 
     await deleteRecurringEntry(id);
-    res.sendStatus(204);
+    res.json({ message: "Entrada recorrente deletada" });
   } catch (error) {
     res.status(500).json({ error: "Erro Interno do Servidor" });
   }

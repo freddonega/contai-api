@@ -12,6 +12,10 @@ const paymentTypeSchema = z.object({
   name: z.string(),
 });
 
+const listPaymentTypesSchema = z.object({
+  search: z.string().optional(),
+});
+
 export const createPaymentTypeController = async (
   req: Request,
   res: Response
@@ -45,16 +49,25 @@ export const listPaymentTypesController = async (
 ) => {
   try {
     const user_id = req.user?.id;
+    const queryData = listPaymentTypesSchema.parse(req.query);
 
     if (!user_id) {
       res.status(401).json({ error: "ID do usuário não encontrado no token" });
       return;
     }
 
-    const paymentTypes = await listPaymentTypes(user_id);
-    res.json(paymentTypes);
+    const payment_types = await listPaymentTypes({
+      user_id,
+    });
+
+    res.json(payment_types);
   } catch (error) {
-    res.status(500).json({ error: "Erro Interno do Servidor" });
+    console.log(error);
+    if (error instanceof ZodError) {
+      res.status(400).json({ error: error.errors });
+    } else {
+      res.status(500).json({ error: "Erro Interno do Servidor" });
+    }
   }
 };
 
@@ -68,7 +81,7 @@ export const getPaymentTypeController = async (req: Request, res: Response) => {
       return;
     }
 
-    const paymentType = await getPaymentType(parseInt(id), user_id);
+    const paymentType = await getPaymentType(id, user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
@@ -94,14 +107,14 @@ export const updatePaymentTypeController = async (
       return;
     }
 
-    const paymentType = await getPaymentType(parseInt(id), user_id);
+    const paymentType = await getPaymentType(id, user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
       return;
     }
 
-    const updatedPaymentType = await updatePaymentType(parseInt(id), {
+    const updatedPaymentType = await updatePaymentType(id, {
       ...paymentTypeData,
       user_id,
     });
@@ -128,14 +141,14 @@ export const deletePaymentTypeController = async (
       return;
     }
 
-    const paymentType = await getPaymentType(parseInt(id), user_id);
+    const paymentType = await getPaymentType(id, user_id);
 
     if (!paymentType) {
       res.status(404).json({ error: "Tipo de pagamento não encontrado" });
       return;
     }
 
-    await deletePaymentType(parseInt(id), user_id);
+    await deletePaymentType(id, user_id);
     res.json({ message: "Tipo de pagamento deletado" });
   } catch (error) {
     res.status(500).json({ error: "Erro Interno do Servidor" });

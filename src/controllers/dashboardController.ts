@@ -7,7 +7,7 @@ import {
   getIncomeExpenseRatioForMonth,
   getSurvivalTime,
   getTotalBalance,
-  getMonthlyTotalsByType, // Add this import
+  getMonthlyTotalsByType,
 } from "../repositories/entryRepository";
 
 export const getDashboard = async (
@@ -23,7 +23,7 @@ export const getDashboard = async (
 
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -49,7 +49,7 @@ export const getTotalsByCategory = async (
 
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -71,7 +71,7 @@ export const getCurrentMonthBalance = async (
 ): Promise<void> => {
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -100,7 +100,7 @@ export const getCategoryComparisonController = async (
 ): Promise<void> => {
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -128,7 +128,7 @@ export const getIncomeExpenseRatio = async (
 ): Promise<void> => {
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -156,7 +156,7 @@ export const getSurvivalTimeController = async (
 ): Promise<void> => {
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -175,7 +175,7 @@ export const getTotalBalanceController = async (
 ): Promise<void> => {
   try {
     const user_id = req?.user?.id;
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }
@@ -197,7 +197,7 @@ export const getMonthlyTotalsByTypeController = async (
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 
-    if (typeof user_id !== "number") {
+    if (!user_id) {
       res.status(400).json({ error: "Invalid user ID" });
       return;
     }

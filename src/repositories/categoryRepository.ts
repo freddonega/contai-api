@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export const createCategory = async (
   data: Omit<Category, "id" | "created_at" | "updated_at">
-): Promise<Omit<Category, "user_id">> => {
+): Promise<Category> => {
   const existingCategory = await prisma.category.findFirst({
     where: {
       name: data.name,
@@ -20,44 +20,34 @@ export const createCategory = async (
 
   return prisma.category.create({
     data,
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      created_at: true,
-      updated_at: true,
-    },
   });
 };
 
+interface ListCategoriesParams {
+  user_id: string;
+  type?: string;
+  page?: number;
+  items_per_page?: number;
+  sort_by?: string[];
+  sort_order?: Array<"asc" | "desc">;
+}
+
 export const listCategories = async ({
-  search,
-  page = 1,
-  items_per_page,
   user_id,
+  type,
+  page = 1,
+  items_per_page = 10,
   sort_by,
   sort_order,
-}: {
-  search?: string;
-  page: number;
-  items_per_page: number;
-  user_id: number;
-  sort_by?: string[];
-  sort_order?: Prisma.SortOrder;
-}) => {
+}: ListCategoriesParams) => {
   const where = {
     user_id,
-    ...(search && {
-      name: {
-        contains: search,
-        mode: Prisma.QueryMode.insensitive,
-      },
-    }),
+    ...(type && { type }),
   };
 
-  const orderBy = sort_by
-    ? sort_by.map((field) => ({ [field]: sort_order || "asc" }))
-    : [{ created_at: Prisma.SortOrder.desc }];
+  const orderBy = sort_by?.map((field, index) => ({
+    [field]: sort_order?.[index] || "asc",
+  })) || [];
 
   const [categories, total] = await prisma.$transaction([
     prisma.category.findMany({
@@ -68,22 +58,25 @@ export const listCategories = async ({
     }),
     prisma.category.count({ where }),
   ]);
+
   return {
     categories,
     total,
     page,
     items_per_page,
+    sort_by,
+    sort_order,
   };
 };
 
-export const getCategory = async (id: number): Promise<Category | null> => {
+export const getCategory = async (id: string): Promise<Category | null> => {
   return prisma.category.findUnique({
     where: { id },
   });
 };
 
 export const updateCategory = async (
-  id: number,
+  id: string,
   data: Partial<Category>
 ): Promise<Category> => {
   return prisma.category.update({
@@ -92,7 +85,7 @@ export const updateCategory = async (
   });
 };
 
-export const deleteCategory = async (id: number): Promise<void> => {
+export const deleteCategory = async (id: string): Promise<void> => {
   const linkedEntries = await prisma.entry.findMany({
     where: { category_id: id },
   });

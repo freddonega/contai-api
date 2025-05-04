@@ -38,9 +38,12 @@ const router = express.Router();
  *                 type: string
  *                 enum: [daily, weekly, monthly, yearly]
  *               category_id:
- *                 type: integer
+ *                 type: string
+ *               payment_type_id:
+ *                 type: string
  *               next_run:
  *                 type: string
+ *                 format: date-time
  *             required:
  *               - amount
  *               - description
@@ -56,7 +59,7 @@ const router = express.Router();
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 user_id:
  *                   type: integer
  *                 amount:
@@ -69,11 +72,21 @@ const router = express.Router();
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: integer
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
  *                     name:
  *                       type: string
  *                 next_run:
  *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Erro de validação
  *       500:
  *         description: Erro ao criar lançamento recorrente
  */
@@ -89,35 +102,89 @@ router.post(
  *   get:
  *     summary: Lista lançamentos recorrentes de um usuário
  *     tags: [RecurringEntries]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número da página
+ *       - in: query
+ *         name: items_per_page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Número de itens por página
+ *       - in: query
+ *         name: sort_by
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: Campos para ordenar os lançamentos recorrentes
+ *       - in: query
+ *         name: sort_order
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [asc, desc]
+ *         description: Ordem de classificação dos lançamentos recorrentes
  *     responses:
  *       200:
  *         description: Lista de lançamentos recorrentes
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   user_id:
- *                     type: integer
- *                   amount:
- *                     type: number
- *                   description:
- *                     type: string
- *                   frequency:
- *                     type: string
- *                   category:
+ *               type: object
+ *               properties:
+ *                 recurring_entries:
+ *                   type: array
+ *                   items:
  *                     type: object
  *                     properties:
  *                       id:
- *                         type: integer
- *                       name:
  *                         type: string
- *                   next_run:
+ *                       amount:
+ *                         type: number
+ *                       description:
+ *                         type: string
+ *                       frequency:
+ *                         type: string
+ *                       category:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                       payment_type:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                       next_run:
+ *                         type: string
+ *                         format: date-time
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 items_per_page:
+ *                   type: integer
+ *                 sort_by:
+ *                   type: array
+ *                   items:
  *                     type: string
+ *                 sort_order:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                     enum: [asc, desc]
+ *       400:
+ *         description: Erro de validação
  *       500:
  *         description: Erro ao listar lançamentos recorrentes
  */
@@ -137,7 +204,7 @@ router.get(
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do lançamento recorrente
  *     responses:
@@ -149,7 +216,7 @@ router.get(
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 user_id:
  *                   type: integer
  *                 amount:
@@ -162,11 +229,21 @@ router.get(
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: integer
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
  *                     name:
  *                       type: string
  *                 next_run:
  *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Lançamento recorrente não encontrado
  *       500:
  *         description: Erro ao buscar lançamento recorrente
  */
@@ -186,7 +263,7 @@ router.get(
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do lançamento recorrente
  *     requestBody:
@@ -203,20 +280,18 @@ router.get(
  *               frequency:
  *                 type: string
  *                 enum: [daily, weekly, monthly, yearly]
- *               category:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   name:
- *                     type: string
+ *               category_id:
+ *                 type: string
+ *               payment_type_id:
+ *                 type: string
  *               next_run:
  *                 type: string
+ *                 format: date-time
  *             required:
  *               - amount
  *               - description
  *               - frequency
- *               - category
+ *               - category_id
  *               - next_run
  *     responses:
  *       200:
@@ -227,7 +302,7 @@ router.get(
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
+ *                   type: string
  *                 user_id:
  *                   type: integer
  *                 amount:
@@ -240,11 +315,21 @@ router.get(
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: integer
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                 payment_type:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
  *                     name:
  *                       type: string
  *                 next_run:
  *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Lançamento recorrente não encontrado
  *       500:
  *         description: Erro ao atualizar lançamento recorrente
  */
@@ -264,12 +349,14 @@ router.put(
  *       - in: path
  *         name: id
  *         schema:
- *           type: integer
+ *           type: string
  *         required: true
  *         description: ID do lançamento recorrente
  *     responses:
  *       204:
  *         description: Lançamento recorrente excluído com sucesso
+ *       404:
+ *         description: Lançamento recorrente não encontrado
  *       500:
  *         description: Erro ao excluir lançamento recorrente
  */
