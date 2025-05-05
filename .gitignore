@@ -4,3 +4,6 @@ node_modules
 dist
 public
 other_n8n.json
+
+*.sql
+*.dump

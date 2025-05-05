@@ -13,6 +13,7 @@ interface ListEntriesParams {
   category_id?: string[];
   category_type?: string[];
   payment_type_id?: string[];
+  cost_center_id?: string[];
   from?: string;
   to?: string;
 }
@@ -56,6 +57,7 @@ export const listEntries = async ({
   category_id,
   category_type,
   payment_type_id,
+  cost_center_id,
   from,
   to,
 }: ListEntriesParams) => {
@@ -73,6 +75,11 @@ export const listEntries = async ({
       },
     }),
     ...(payment_type_id && { payment_type_id: { in: payment_type_id } }),
+    ...(cost_center_id && {
+      category: {
+        cost_center_id: { in: cost_center_id },
+      },
+    }),
     ...(from &&
       to && {
         period: {
@@ -144,6 +151,12 @@ export const listEntries = async ({
             id: true,
             name: true,
             type: true,
+            cost_center: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },

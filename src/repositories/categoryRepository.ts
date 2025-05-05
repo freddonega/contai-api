@@ -4,9 +4,16 @@ import { removeAccents } from "../utils/stringUtils";
 
 const prisma = new PrismaClient();
 
+type CategoryResponse = Omit<Category, "cost_center_id"> & {
+  cost_center: {
+    id: string;
+    name: string;
+  };
+};
+
 export const createCategory = async (
   data: Omit<Category, "id" | "created_at" | "updated_at">
-): Promise<Category> => {
+): Promise<CategoryResponse> => {
   const existingCategory = await prisma.category.findFirst({
     where: {
       name: data.name,
@@ -19,33 +26,68 @@ export const createCategory = async (
     throw new CategoryException("Categoria com o mesmo nome e tipo já existe");
   }
 
-  return prisma.category.create({
-    data,
+  // Verifica se o centro de custo existe e pertence ao usuário
+  const costCenter = await prisma.costCenter.findFirst({
+    where: {
+      id: data.cost_center_id,
+      user_id: data.user_id,
+    },
   });
+
+  if (!costCenter) {
+    throw new CategoryException("Centro de custo não encontrado ou não pertence ao usuário");
+  }
+
+  const category = await prisma.category.create({
+    data,
+    include: {
+      cost_center: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  const { cost_center_id, ...categoryWithoutCostCenterId } = category;
+  return categoryWithoutCostCenterId as CategoryResponse;
 };
 
 interface ListCategoriesParams {
   user_id: string;
   search?: string;
   type?: string;
+  cost_center_id?: string;
   page?: number;
   items_per_page?: number;
   sort_by?: string[];
   sort_order?: Array<"asc" | "desc">;
 }
 
+interface ListCategoriesResponse {
+  categories: CategoryResponse[];
+  total: number;
+  page: number;
+  items_per_page: number;
+  sort_by?: string[] | undefined;
+  sort_order?: Array<"asc" | "desc"> | undefined;
+}
+
 export const listCategories = async ({
   user_id,
   search,
   type,
+  cost_center_id,
   page = 1,
   items_per_page = 10,
   sort_by,
   sort_order,
-}: ListCategoriesParams) => {
+}: ListCategoriesParams): Promise<ListCategoriesResponse> => {
   const where = {
     user_id,
     ...(type && { type }),
+    ...(cost_center_id && { cost_center_id }),
   };
 
   const orderBy = sort_by?.map((field, index) => ({
@@ -56,6 +98,14 @@ export const listCategories = async ({
     prisma.category.findMany({
       where,
       orderBy,
+      include: {
+        cost_center: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     }),
     prisma.category.count({ where }),
   ]);
@@ -75,8 +125,11 @@ export const listCategories = async ({
     page * items_per_page
   );
 
+  // Remove cost_center_id de cada categoria
+  const categoriesWithoutCostCenterId = paginatedCategories.map(({ cost_center_id, ...category }) => category as CategoryResponse);
+
   return {
-    categories: paginatedCategories,
+    categories: categoriesWithoutCostCenterId,
     total: filteredCategories.length,
     page,
     items_per_page,
@@ -85,20 +138,66 @@ export const listCategories = async ({
   };
 };
 
-export const getCategory = async (id: string): Promise<Category | null> => {
-  return prisma.category.findUnique({
+export const getCategory = async (id: string): Promise<CategoryResponse | null> => {
+  const category = await prisma.category.findUnique({
     where: { id },
+    include: {
+      cost_center: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
+
+  if (!category) return null;
+
+  const { cost_center_id, ...categoryWithoutCostCenterId } = category;
+  return categoryWithoutCostCenterId as CategoryResponse;
 };
 
 export const updateCategory = async (
   id: string,
   data: Partial<Category>
-): Promise<Category> => {
-  return prisma.category.update({
+): Promise<CategoryResponse> => {
+  // Se estiver atualizando o centro de custo, verifica se ele existe e pertence ao usuário
+  if (data.cost_center_id) {
+    const category = await prisma.category.findUnique({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new CategoryException("Categoria não encontrada");
+    }
+
+    const costCenter = await prisma.costCenter.findFirst({
+      where: {
+        id: data.cost_center_id,
+        user_id: category.user_id,
+      },
+    });
+
+    if (!costCenter) {
+      throw new CategoryException("Centro de custo não encontrado ou não pertence ao usuário");
+    }
+  }
+
+  const category = await prisma.category.update({
     where: { id },
     data,
+    include: {
+      cost_center: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
+
+  const { cost_center_id, ...categoryWithoutCostCenterId } = category;
+  return categoryWithoutCostCenterId as CategoryResponse;
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {

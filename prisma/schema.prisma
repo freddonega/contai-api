@@ -20,6 +20,7 @@ model User {
   paymentTypes     PaymentType[]
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
+  CostCenter       CostCenter[]
 }
 
 model Category {
@@ -27,7 +28,9 @@ model Category {
   name             String
   user_id          String
   type             String
+  cost_center_id   String
   user             User             @relation(fields: [user_id], references: [id])
+  cost_center      CostCenter       @relation(fields: [cost_center_id], references: [id])
   entries          Entry[]
   recurringEntries RecurringEntry[]
   created_at       DateTime         @default(now())
@@ -78,4 +81,16 @@ model PaymentType {
   recurringEntries RecurringEntry[]
 
   user User @relation(fields: [user_id], references: [id])
+}
+
+model CostCenter {
+  id         String     @id @default(dbgenerated("gen_random_uuid()"))
+  name       String
+  user_id    String
+  user       User       @relation(fields: [user_id], references: [id])
+  categories Category[]
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+
+  @@unique([name, user_id])
 }

@@ -7,6 +7,7 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 import recurringEntryRoutes from "./routes/recurringEntryRoutes";
 import jobRoutes from "./routes/jobRoutes";
 import paymentTypeRoutes from "./routes/paymentTypeRoutes";
+import costCenterRoutes from "./routes/costCenterRoutes";
 import path from "path";
 
 const app = express();
@@ -21,5 +22,6 @@ app.use(dashboardRoutes);
 app.use(recurringEntryRoutes);
 app.use(jobRoutes);
 app.use(paymentTypeRoutes);
+app.use(costCenterRoutes);
 
 export default app;

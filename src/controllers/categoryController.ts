@@ -12,6 +12,7 @@ import { CategoryException } from "../exceptions/CategoryException";
 const categorySchema = z.object({
   name: z.string(),
   type: z.enum(["income", "expense"]),
+  cost_center_id: z.string(),
 });
 
 const listCategoriesSchema = z.object({
@@ -23,6 +24,7 @@ const listCategoriesSchema = z.object({
   ),
   sort_by: z.union([z.string(), z.array(z.string())]).optional(),
   sort_order: z.union([z.enum(["asc", "desc"]), z.array(z.enum(["asc", "desc"]))]).optional(),
+  cost_center_id: z.string().optional(),
 });
 
 export const createCategoryController = async (req: Request, res: Response) => {
@@ -71,6 +73,7 @@ export const listCategoriesController = async (req: Request, res: Response) => {
       items_per_page: queryData.items_per_page,
       sort_by: Array.isArray(queryData.sort_by) ? queryData.sort_by : queryData.sort_by ? [queryData.sort_by] : undefined,
       sort_order: Array.isArray(queryData.sort_order) ? queryData.sort_order : queryData.sort_order ? [queryData.sort_order] : undefined,
+      cost_center_id: queryData.cost_center_id,
     });
 
     res.json(result);

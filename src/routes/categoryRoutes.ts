@@ -35,9 +35,12 @@ const router = Router();
  *               type:
  *                 type: string
  *                 enum: [income, expense]
+ *               cost_center_id:
+ *                 type: string
  *             required:
  *               - name
  *               - type
+ *               - cost_center_id
  *     responses:
  *       200:
  *         description: Categoria criada com sucesso
@@ -51,6 +54,8 @@ const router = Router();
  *                 name:
  *                   type: string
  *                 type:
+ *                   type: string
+ *                 cost_center_id:
  *                   type: string
  *       400:
  *         description: Erro de validação
@@ -72,6 +77,11 @@ router.post("/category", authenticateToken, createCategoryController);
  *           type: string
  *           enum: [income, expense]
  *         description: Filtrar por tipo de categoria
+ *       - in: query
+ *         name: cost_center_id
+ *         schema:
+ *           type: string
+ *         description: Filtrar por centro de custo
  *     responses:
  *       200:
  *         description: Lista de categorias
@@ -87,6 +97,8 @@ router.post("/category", authenticateToken, createCategoryController);
  *                   name:
  *                     type: string
  *                   type:
+ *                     type: string
+ *                   cost_center_id:
  *                     type: string
  *       500:
  *         description: Erro Interno do Servidor
@@ -152,9 +164,12 @@ router.get("/category/:id", authenticateToken, getCategoryController);
  *               type:
  *                 type: string
  *                 enum: [income, expense]
+ *               cost_center_id:
+ *                 type: string
  *             required:
  *               - name
  *               - type
+ *               - cost_center_id
  *     responses:
  *       200:
  *         description: Categoria atualizada com sucesso
@@ -168,6 +183,8 @@ router.get("/category/:id", authenticateToken, getCategoryController);
  *                 name:
  *                   type: string
  *                 type:
+ *                   type: string
+ *                 cost_center_id:
  *                   type: string
  *       404:
  *         description: Categoria não encontrada

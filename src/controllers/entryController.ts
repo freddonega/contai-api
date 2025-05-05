@@ -28,6 +28,7 @@ const listEntriesSchema = z.object({
   category_id: z.union([z.string(), z.array(z.string())]).optional(),
   category_type: z.union([z.string(), z.array(z.string())]).optional(),
   payment_type_id: z.union([z.string(), z.array(z.string())]).optional(),
+  cost_center_id: z.union([z.string(), z.array(z.string())]).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
 });
@@ -76,6 +77,9 @@ export const listEntriesController = async (req: Request, res: Response) => {
     if (queryData.payment_type_id && !Array.isArray(queryData.payment_type_id)) {
       queryData = { ...queryData, payment_type_id: [queryData.payment_type_id] };
     }
+    if (queryData.cost_center_id && !Array.isArray(queryData.cost_center_id)) {
+      queryData = { ...queryData, cost_center_id: [queryData.cost_center_id] };
+    }
     const user_id = req.user?.id;
 
     if (!user_id) {
@@ -101,6 +105,7 @@ export const listEntriesController = async (req: Request, res: Response) => {
       category_id: queryData.category_id as string[] | undefined,
       category_type: queryData.category_type as string[] | undefined,
       payment_type_id: queryData.payment_type_id as string[] | undefined,
+      cost_center_id: queryData.cost_center_id as string[] | undefined,
       from: queryData.from,
       to: queryData.to,
     });
