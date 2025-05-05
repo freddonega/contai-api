@@ -25,9 +25,9 @@ const listEntriesSchema = z.object({
   ),
   sort_by: z.array(z.string()).optional(),
   sort_order: z.array(z.enum(["asc", "desc"])).optional(),
-  category_id: z.string().optional(),
-  category_type: z.string().optional(),
-  payment_type_id: z.string().optional(),
+  category_id: z.union([z.string(), z.array(z.string())]).optional(),
+  category_type: z.union([z.string(), z.array(z.string())]).optional(),
+  payment_type_id: z.union([z.string(), z.array(z.string())]).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
 });
@@ -67,6 +67,15 @@ export const listEntriesController = async (req: Request, res: Response) => {
     if (queryData.sort_order && !Array.isArray(queryData.sort_order)) {
       queryData = { ...queryData, sort_order: [queryData.sort_order] };
     }
+    if (queryData.category_id && !Array.isArray(queryData.category_id)) {
+      queryData = { ...queryData, category_id: [queryData.category_id] };
+    }
+    if (queryData.category_type && !Array.isArray(queryData.category_type)) {
+      queryData = { ...queryData, category_type: [queryData.category_type] };
+    }
+    if (queryData.payment_type_id && !Array.isArray(queryData.payment_type_id)) {
+      queryData = { ...queryData, payment_type_id: [queryData.payment_type_id] };
+    }
     const user_id = req.user?.id;
 
     if (!user_id) {
@@ -89,9 +98,9 @@ export const listEntriesController = async (req: Request, res: Response) => {
         (item): item is "asc" | "desc" => !!item
       ),
       user_id,
-      category_id: queryData.category_id,
-      category_type: queryData.category_type,
-      payment_type_id: queryData.payment_type_id,
+      category_id: queryData.category_id as string[] | undefined,
+      category_type: queryData.category_type as string[] | undefined,
+      payment_type_id: queryData.payment_type_id as string[] | undefined,
       from: queryData.from,
       to: queryData.to,
     });

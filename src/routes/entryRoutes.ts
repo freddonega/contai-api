@@ -123,6 +123,37 @@ router.post("/entries", authenticateToken, createEntryController);
  *             type: string
  *             enum: [asc, desc]
  *         description: Ordem de classificação das entradas
+ *       - in: query
+ *         name: category_id
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: IDs das categorias para filtrar
+ *       - in: query
+ *         name: category_type
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: Tipos de categorias para filtrar
+ *       - in: query
+ *         name: payment_type_id
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: IDs dos tipos de pagamento para filtrar
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *         description: Data inicial para filtrar (formato YYYY-MM)
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *         description: Data final para filtrar (formato YYYY-MM)
  *     responses:
  *       200:
  *         description: Lista de entradas
@@ -137,16 +168,22 @@ router.post("/entries", authenticateToken, createEntryController);
  *                     type: object
  *                     properties:
  *                       id:
- *                         type: integer
+ *                         type: string
  *                       amount:
  *                         type: number
  *                       description:
  *                         type: string
- *                       category_id:
- *                         type: integer
- *                       user_id:
- *                         type: integer
+ *                       category:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           type:
+ *                             type: string
  *                       period:
+ *                         type: string
  *                 total:
  *                   type: integer
  *                 page:
@@ -162,6 +199,8 @@ router.post("/entries", authenticateToken, createEntryController);
  *                   items:
  *                     type: string
  *                     enum: [asc, desc]
+ *                 total_amount:
+ *                   type: number
  *       400:
  *         description: Erro de validação
  *       500:

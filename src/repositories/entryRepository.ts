@@ -10,9 +10,9 @@ interface ListEntriesParams {
   sort_by?: string[];
   sort_order?: Array<"asc" | "desc">;
   user_id: string;
-  category_id?: string;
-  category_type?: string;
-  payment_type_id?: string;
+  category_id?: string[];
+  category_type?: string[];
+  payment_type_id?: string[];
   from?: string;
   to?: string;
 }
@@ -66,13 +66,13 @@ export const listEntries = async ({
         contains: search,
       },
     }),
-    ...(category_id && { category_id }),
+    ...(category_id && { category_id: { in: category_id } }),
     ...(category_type && {
       category: {
-        type: category_type,
+        type: { in: category_type },
       },
     }),
-    ...(payment_type_id && { payment_type_id }),
+    ...(payment_type_id && { payment_type_id: { in: payment_type_id } }),
     ...(from &&
       to && {
         period: {
@@ -99,7 +99,7 @@ export const listEntries = async ({
   let incomeResult = null;
   let expenseResult = null;
 
-  if (category_type === "income" || !category_type) {
+  if (category_type?.includes("income") || !category_type) {
     incomeResult = prisma.entry.aggregate({
       _sum: {
         amount: true,
@@ -113,7 +113,7 @@ export const listEntries = async ({
     });
   }
 
-  if (category_type === "expense" || !category_type) {
+  if (category_type?.includes("expense") || !category_type) {
     expenseResult = prisma.entry.aggregate({
       _sum: {
         amount: true,
