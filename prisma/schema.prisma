@@ -24,17 +24,17 @@ model User {
 }
 
 model Category {
-  id               String           @id @default(dbgenerated("gen_random_uuid()"))
-  name             String
-  user_id          String
-  type             String
-  cost_center_id   String
-  user             User             @relation(fields: [user_id], references: [id])
-  cost_center      CostCenter       @relation(fields: [cost_center_id], references: [id])
-  entries          Entry[]
-  recurringEntries RecurringEntry[]
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @updatedAt
+  id             String           @id @default(uuid())
+  name           String
+  type           String
+  cost_center_id String?
+  cost_center    CostCenter?      @relation(fields: [cost_center_id], references: [id], onDelete: SetNull)
+  user_id        String
+  user           User             @relation(fields: [user_id], references: [id])
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  entries        Entry[]
+  RecurringEntry RecurringEntry[]
 
   @@unique([name, type, user_id])
 }

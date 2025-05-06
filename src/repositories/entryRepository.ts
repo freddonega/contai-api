@@ -115,6 +115,9 @@ export const listEntries = async ({
         ...where,
         category: {
           type: "income",
+          ...(cost_center_id && {
+            cost_center_id: { in: cost_center_id },
+          }),
         },
       },
     });
@@ -129,6 +132,9 @@ export const listEntries = async ({
         ...where,
         category: {
           type: "expense",
+          ...(cost_center_id && {
+            cost_center_id: { in: cost_center_id },
+          }),
         },
       },
     });
