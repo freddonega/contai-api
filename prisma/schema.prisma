@@ -55,7 +55,7 @@ model Entry {
 }
 
 model RecurringEntry {
-  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  id              String    @id @default(dbgenerated("gen_random_uuid()"))
   user_id         String
   category_id     String
   payment_type_id String?
@@ -63,8 +63,9 @@ model RecurringEntry {
   description     String?
   frequency       String // "monthly", "weekly", "yearly"
   next_run        DateTime
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  last_run        DateTime? // Optional field for last action date
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
 
   user         User         @relation(fields: [user_id], references: [id])
   category     Category     @relation(fields: [category_id], references: [id])

@@ -17,6 +17,7 @@ const recurringEntrySchema = z.object({
   category_id: z.string(),
   payment_type_id: z.string().optional(),
   next_run: z.string().transform((str) => new Date(str)),
+  last_run: z.string().transform((str) => new Date(str)).optional(),
 });
 
 const listRecurringEntriesSchema = z.object({
@@ -47,6 +48,7 @@ export const createRecurringEntryController = async (
       ...recurringEntryData,
       description: recurringEntryData.description ?? null,
       payment_type_id: recurringEntryData.payment_type_id ?? null,
+      last_run: recurringEntryData.last_run ?? null,
       user_id,
     });
     res.json(recurringEntry);

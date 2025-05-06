@@ -14,6 +14,7 @@ export const createRecurringEntry = async (
       description: true,
       frequency: true,
       next_run: true,
+      last_run: true,
       created_at: true,
       updated_at: true,
       category: {
@@ -135,6 +136,7 @@ export const getRecurringEntry = async (
         },
       },
       next_run: true,
+      last_run: true,
       created_at: true,
       updated_at: true,
     },

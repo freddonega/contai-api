@@ -44,7 +44,10 @@ export const processRecurringEntries = async () => {
 
     await prisma.recurringEntry.update({
       where: { id: entry.id },
-      data: { next_run: nextRun },
+      data: { 
+        next_run: nextRun,
+        last_run: new Date() // Set the last_run to current date when processed
+      },
     });
   }
 };

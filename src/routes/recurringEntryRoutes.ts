@@ -44,6 +44,10 @@ const router = express.Router();
  *               next_run:
  *                 type: string
  *                 format: date-time
+ *               last_run:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Data da última execução (opcional)
  *             required:
  *               - amount
  *               - description
@@ -85,6 +89,10 @@ const router = express.Router();
  *                 next_run:
  *                   type: string
  *                   format: date-time
+ *                 last_run:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Data da última execução
  *       400:
  *         description: Erro de validação
  *       500:
@@ -287,6 +295,10 @@ router.get(
  *               next_run:
  *                 type: string
  *                 format: date-time
+ *               last_run:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Data da última execução (opcional)
  *             required:
  *               - amount
  *               - description
@@ -328,6 +340,10 @@ router.get(
  *                 next_run:
  *                   type: string
  *                   format: date-time
+ *                 last_run:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Data da última execução
  *       404:
  *         description: Lançamento recorrente não encontrado
  *       500:
