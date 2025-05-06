@@ -67,6 +67,7 @@ export const listRecurringEntries = async ({
           select: {
             id: true,
             name: true,
+            type: true,
           },
         },
         payment_type: {
