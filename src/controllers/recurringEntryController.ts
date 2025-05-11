@@ -17,7 +17,10 @@ const recurringEntrySchema = z.object({
   category_id: z.string(),
   payment_type_id: z.string().optional(),
   next_run: z.string().transform((str) => new Date(str)),
-  last_run: z.string().transform((str) => new Date(str)).optional(),
+  last_run: z
+    .string()
+    .transform((str) => new Date(str))
+    .nullable(),
 });
 
 const listRecurringEntriesSchema = z.object({
@@ -79,8 +82,16 @@ export const listRecurringEntriesController = async (
       search: queryData.search,
       page: queryData.page,
       items_per_page: queryData.items_per_page,
-      sort_by: Array.isArray(queryData.sort_by) ? queryData.sort_by : queryData.sort_by ? [queryData.sort_by] : undefined,
-      sort_order: Array.isArray(queryData.sort_order) ? queryData.sort_order : queryData.sort_order ? [queryData.sort_order] : undefined,
+      sort_by: Array.isArray(queryData.sort_by)
+        ? queryData.sort_by
+        : queryData.sort_by
+        ? [queryData.sort_by]
+        : undefined,
+      sort_order: Array.isArray(queryData.sort_order)
+        ? queryData.sort_order
+        : queryData.sort_order
+        ? [queryData.sort_order]
+        : undefined,
     });
 
     res.json(result);
